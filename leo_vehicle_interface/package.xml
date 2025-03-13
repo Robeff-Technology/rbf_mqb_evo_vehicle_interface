@@ -25,7 +25,7 @@
   <depend>can_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>leo_vehicle_interface_msgs</depend>
-  <depend>flux_pds_msgs</depend>
+  
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

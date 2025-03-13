@@ -17,8 +17,7 @@ ament_auto_find_build_dependencies()
 ament_auto_add_library(can_interface SHARED
         src/can_interface/autonomous.c
         src/can_interface/autonomous-binutil.c
-        src/can_interface/flux-binutil.c
-        src/can_interface/flux.c
+
 )
 
 

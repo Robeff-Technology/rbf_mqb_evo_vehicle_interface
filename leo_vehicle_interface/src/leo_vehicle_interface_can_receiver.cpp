@@ -44,15 +44,6 @@ LeoVehicleInterfaceCanReceiver::LeoVehicleInterfaceCanReceiver(const rclcpp::Nod
   wheel_speeds_pub_ = this->create_publisher<leo_vehicle_interface_msgs::msg::WheelSpeeds>(
     "leo_vehicle_interface/wheel_speeds", 10);
 
-  // flux pusblishers
-  flux_bus_status_pub_ =
-    this->create_publisher<flux_pds_msgs::msg::BusStatus>("flux/bus_status", 10);
-  flux_channel_status_pub_ =
-    this->create_publisher<flux_pds_msgs::msg::ChannelStatus>("flux/channel_status", 10);
-  flux_channel_currents_pub_ =
-    this->create_publisher<flux_pds_msgs::msg::ChannelCurrents>("flux/channel_currents", 10);
-  flux_channel_consumptions_pub_ = this->create_publisher<flux_pds_msgs::msg::ChannelConsumptions>(
-    "flux/channel_consumptions", 10);
 
   // autoware publishers
   control_mode_pub_ = create_publisher<autoware_vehicle_msgs::msg::ControlModeReport>(
@@ -166,47 +157,6 @@ void LeoVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::
     }
   }
 
-  if (flux_Receive(
-        &(LeoVehicleInterfaceCanReceiver::flux_rx_), msg->data.data(), msg->id, msg->dlc)) {
-    switch (msg->id) {
-      case CHANNEL_STATUS_MSG_CANID:
-        publish_flux_channel_status(flux_rx_.CHANNEL_STATUS_MSG);
-        break;
-      case BUS_STATUS_MSG_CANID:
-        publish_flux_bus_status(flux_rx_.BUS_STATUS_MSG);
-        break;
-      case CURRENTS_1_MSG_CANID:
-        check_currents_id |= 1;
-        break;
-      case CURRENTS_2_MSG_CANID:
-        check_currents_id |= 2;
-        break;
-      case CURRENTS_3_MSG_CANID:
-        check_currents_id |= 4;
-
-        if (check_currents_id == 7) {
-          publish_flux_channel_currents(
-            flux_rx_.CURRENTS_1_MSG, flux_rx_.CURRENTS_2_MSG, flux_rx_.CURRENTS_3_MSG);
-          check_currents_id = 0;
-        }
-        break;
-
-      case CONSUMPTION_1_MSG_CANID:
-        check_consumptions_id |= 1;
-        break;
-      case CONSUMPTION_2_MSG_CANID:
-        check_consumptions_id |= 2;
-        break;
-      case CONSUMPTION_3_MSG_CANID:
-        check_consumptions_id |= 4;
-        if (check_consumptions_id == 7) {
-          publish_flux_channel_consumptions(
-            flux_rx_.CONSUMPTION_1_MSG, flux_rx_.CONSUMPTION_2_MSG, flux_rx_.CONSUMPTION_3_MSG);
-          check_consumptions_id = 0;
-          break;
-        }
-    }
-  }
 }
 
 void LeoVehicleInterfaceCanReceiver::publish_control_mechanism_temps(
@@ -343,85 +293,6 @@ void LeoVehicleInterfaceCanReceiver::publish_wheel_speeds(const WHEEL_SPEEDS_t &
   wheel_speeds_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_flux_bus_status(const BUS_STATUS_MSG_t & bus_status)
-{
-  auto msg = flux_pds_msgs::msg::BusStatus();
-  msg.stamp = this->now();
-  msg.bus_voltage = bus_status.bus_voltage_phys;
-  msg.bus_current = bus_status.bus_current_phys;
-  msg.bus_power = bus_status.bus_power_phys;
-  msg.bus_consumption = bus_status.bus_consumption_phys;
-
-  flux_bus_status_pub_->publish(msg);
-}
-
-void LeoVehicleInterfaceCanReceiver::publish_flux_channel_status(
-  const CHANNEL_STATUS_MSG_t & channel_status)
-{
-  auto msg = flux_pds_msgs::msg::ChannelStatus();
-  msg.stamp = this->now();
-
-  msg.ch1_status = channel_status.ch1_stat;
-  msg.ch2_status = channel_status.ch2_stat;
-  msg.ch3_status = channel_status.ch3_stat;
-  msg.ch4_status = channel_status.ch4_stat;
-  msg.ch5_status = channel_status.ch5_stat;
-  msg.ch6_status = channel_status.ch6_stat;
-  msg.ch7_status = channel_status.ch7_stat;
-  msg.ch8_status = channel_status.ch8_stat;
-  msg.ch9_status = channel_status.ch9_stat;
-  msg.ch10_status = channel_status.ch10_stat;
-  msg.ch11_status = channel_status.ch11_stat;
-  msg.ch12_status = channel_status.ch12_stat;
-
-  flux_channel_status_pub_->publish(msg);
-}
-
-void LeoVehicleInterfaceCanReceiver::publish_flux_channel_consumptions(
-  const CONSUMPTION_1_MSG_t & consumptions_1, const CONSUMPTION_2_MSG_t & consumptions_2,
-  const CONSUMPTION_3_MSG_t & consumptions_3)
-{
-  auto msg = flux_pds_msgs::msg::ChannelConsumptions();
-  msg.stamp = this->now();
-
-  msg.ch1_consumption = consumptions_1.ch1_cons_phys;
-  msg.ch2_consumption = consumptions_1.ch2_cons_phys;
-  msg.ch3_consumption = consumptions_1.ch3_cons_phys;
-  msg.ch4_consumption = consumptions_1.ch4_cons_phys;
-  msg.ch5_consumption = consumptions_2.ch5_cons_phys;
-  msg.ch6_consumption = consumptions_2.ch6_cons_phys;
-  msg.ch7_consumption = consumptions_2.ch7_cons_phys;
-  msg.ch8_consumption = consumptions_2.ch8_cons_phys;
-  msg.ch9_consumption = consumptions_3.ch9_cons_phys;
-  msg.ch10_consumption = consumptions_3.ch10_cons_phys;
-  msg.ch11_consumption = consumptions_3.ch11_cons_phys;
-  msg.ch12_consumption = consumptions_3.ch12_cons_phys;
-
-  flux_channel_consumptions_pub_->publish(msg);
-}
-
-void LeoVehicleInterfaceCanReceiver::publish_flux_channel_currents(
-  const CURRENTS_1_MSG_t & currents_1, const CURRENTS_2_MSG_t & currents_2,
-  const CURRENTS_3_MSG_t & currents_3)
-{
-  auto msg = flux_pds_msgs::msg::ChannelCurrents();
-  msg.stamp = this->now();
-
-  msg.ch1_current = currents_1.ch1_current_phys;
-  msg.ch2_current = currents_1.ch2_current_phys;
-  msg.ch3_current = currents_1.ch3_current_phys;
-  msg.ch4_current = currents_1.ch4_current_phys;
-  msg.ch5_current = currents_2.ch5_current_phys;
-  msg.ch6_current = currents_2.ch6_current_phys;
-  msg.ch7_current = currents_2.ch7_current_phys;
-  msg.ch8_current = currents_2.ch8_current_phys;
-  msg.ch9_current = currents_3.ch9_current_phys;
-  msg.ch10_current = currents_3.ch10_current_phys;
-  msg.ch11_current = currents_3.ch11_current_phys;
-  msg.ch12_current = currents_3.ch12_current_phys;
-
-  flux_channel_currents_pub_->publish(msg);
-}
 
 void LeoVehicleInterfaceCanReceiver::diagnostic_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)

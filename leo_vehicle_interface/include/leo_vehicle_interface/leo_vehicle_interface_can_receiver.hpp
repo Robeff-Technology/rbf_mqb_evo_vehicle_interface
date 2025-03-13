@@ -16,17 +16,13 @@
 #ifndef LEO_VEHICLE_INTERFACE_CAN_RECV_HPP
 #define LEO_VEHICLE_INTERFACE_CAN_RECV_HPP
 
-#include "can_interface/flux-binutil.h"
+
 #include "can_interface/autonomous-binutil.h"
 #include "rclcpp/rclcpp.hpp"
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
 #include "can_msgs/msg/frame.hpp"
-#include "flux_pds_msgs/msg/bus_status.hpp"
-#include "flux_pds_msgs/msg/channel_consumptions.hpp"
-#include "flux_pds_msgs/msg/channel_currents.hpp"
-#include "flux_pds_msgs/msg/channel_status.hpp"
 #include "leo_vehicle_interface_msgs/msg/control_mechanism_temps.hpp"
 #include "leo_vehicle_interface_msgs/msg/control_mechanism_volts.hpp"
 #include "leo_vehicle_interface_msgs/msg/dynamic_sensor_frame.hpp"
@@ -99,14 +95,9 @@ private:
     vehicle_signal_status_pub_;
   rclcpp::Publisher<leo_vehicle_interface_msgs::msg::WheelSpeeds>::SharedPtr wheel_speeds_pub_;
 
-  rclcpp::Publisher<flux_pds_msgs::msg::BusStatus>::SharedPtr flux_bus_status_pub_;
-  rclcpp::Publisher<flux_pds_msgs::msg::ChannelConsumptions>::SharedPtr
-    flux_channel_consumptions_pub_;
-  rclcpp::Publisher<flux_pds_msgs::msg::ChannelCurrents>::SharedPtr flux_channel_currents_pub_;
-  rclcpp::Publisher<flux_pds_msgs::msg::ChannelStatus>::SharedPtr flux_channel_status_pub_;
 
   autonomous_rx_t autonomous_rx_;
-  flux_rx_t flux_rx_;
+
 
   // sending messages functions
   void publish_control_mechanism_temps(const CONTROL_MECHANISM_TEMPS_t & control_mechanism_temps);
@@ -120,15 +111,7 @@ private:
   void publish_vehicle_signal_status(const VEHICLE_SIGNAL_STATUS_t & vehicle_signal_status);
   void publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds);
 
-  void publish_flux_bus_status(const BUS_STATUS_MSG_t & bus_status);
-  void publish_flux_channel_status(const CHANNEL_STATUS_MSG_t & channel_status);
-  void publish_flux_channel_currents(
-    const CURRENTS_1_MSG_t & currents_1, const CURRENTS_2_MSG_t & currents_2,
-    const CURRENTS_3_MSG_t & currents_3);
 
-  void publish_flux_channel_consumptions(
-    const CONSUMPTION_1_MSG_t & consumptions_1, const CONSUMPTION_2_MSG_t & consumptions_2,
-    const CONSUMPTION_3_MSG_t & consumptions_3);
 
   // diagnostic callback
   void diagnostic_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
