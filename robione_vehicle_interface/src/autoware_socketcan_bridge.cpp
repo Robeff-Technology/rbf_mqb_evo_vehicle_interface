@@ -1,10 +1,10 @@
-#include "leo_vehicle_interface/autoware_socketcan_bridge.hpp"
+#include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
 #include <cmath>
 
-namespace leo_vehicle_interface
+namespace robione_vehicle_interface
 {
 
 FRONT_WHEEL_COMMANDS_t front_wheel_cmd_{};
@@ -143,10 +143,10 @@ AutowareSocketcanBridge::convert_to_tier4_actuation_status(
   return actuation_status_msg;
 }
 
-leo_vehicle_interface_msgs::msg::FrontWheelCommand
+robione_vehicle_interface_msgs::msg::FrontWheelCommand
 AutowareSocketcanBridge::convert_to_front_wheel_cmd()
 {
-  leo_vehicle_interface_msgs::msg::FrontWheelCommand front_wheel_cmd_msg;
+  robione_vehicle_interface_msgs::msg::FrontWheelCommand front_wheel_cmd_msg;
   front_wheel_cmd_msg.stamp = rclcpp::Clock().now();
 
   front_wheel_cmd_msg.set_tire_angle = front_wheel_cmd_.set_front_wheel_tire_angle;
@@ -155,10 +155,10 @@ AutowareSocketcanBridge::convert_to_front_wheel_cmd()
   return front_wheel_cmd_msg;
 }
 
-leo_vehicle_interface_msgs::msg::LongitudinalCommand
+robione_vehicle_interface_msgs::msg::LongitudinalCommand
 AutowareSocketcanBridge::convert_to_longitudinal_cmd()
 {
-  leo_vehicle_interface_msgs::msg::LongitudinalCommand long_cmd_;
+  robione_vehicle_interface_msgs::msg::LongitudinalCommand long_cmd_;
   long_cmd_.stamp = rclcpp::Clock().now();
 
   long_cmd_.set_velocity = longitudinal_cmd_.set_velocity;
@@ -167,9 +167,9 @@ AutowareSocketcanBridge::convert_to_longitudinal_cmd()
   return long_cmd_;
 }
 
-leo_vehicle_interface_msgs::msg::VehicleCommand AutowareSocketcanBridge::convert_to_vehicle_cmd()
+robione_vehicle_interface_msgs::msg::VehicleCommand AutowareSocketcanBridge::convert_to_vehicle_cmd()
 {
-  leo_vehicle_interface_msgs::msg::VehicleCommand vehicle_cmd_msg;
+  robione_vehicle_interface_msgs::msg::VehicleCommand vehicle_cmd_msg;
   vehicle_cmd_msg.stamp = rclcpp::Clock().now();
 
   vehicle_cmd_msg.set_autonomous = vehicle_cmd_.set_autonomous;
@@ -285,4 +285,4 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   return frame;
 }
 
-}  // namespace leo_vehicle_interface
+}  // namespace robione_vehicle_interface

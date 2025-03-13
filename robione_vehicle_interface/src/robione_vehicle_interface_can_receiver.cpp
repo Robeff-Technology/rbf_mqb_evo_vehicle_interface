@@ -1,11 +1,11 @@
-#include "leo_vehicle_interface/leo_vehicle_interface_can_receiver.hpp"
+#include "robione_vehicle_interface/robione_vehicle_interface_can_receiver.hpp"
 
-#include "leo_vehicle_interface/autoware_socketcan_bridge.hpp"
+#include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
 
-namespace leo_vehicle_interface
+namespace robione_vehicle_interface
 {
-LeoVehicleInterfaceCanReceiver::LeoVehicleInterfaceCanReceiver(const rclcpp::NodeOptions & options)
-: Node{"leo_vehicle_interface_can_receiver", options}, diag_updater_{this}
+RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(const rclcpp::NodeOptions & options)
+: Node{"robione_vehicle_interface_can_receiver", options}, diag_updater_{this}
 {
   // params
   can_recv_timeout_threshold_ = declare_parameter("can_recv_timeout_threshold_", 2.0);
@@ -15,34 +15,34 @@ LeoVehicleInterfaceCanReceiver::LeoVehicleInterfaceCanReceiver(const rclcpp::Nod
   // subscriptions
   can_frame_sub_ = this->create_subscription<can_msgs::msg::Frame>(
     "/from_can_bus", 100,
-    std::bind(&LeoVehicleInterfaceCanReceiver::can_receive_callback, this, std::placeholders::_1));
+    std::bind(&RobioneVehicleInterfaceCanReceiver::can_receive_callback, this, std::placeholders::_1));
 
   // publishers
   control_mechanism_temps_pub_ =
-    this->create_publisher<leo_vehicle_interface_msgs::msg::ControlMechanismTemps>(
-      "leo_vehicle_interface/control_mechanism_temps", 10);
+    this->create_publisher<robione_vehicle_interface_msgs::msg::ControlMechanismTemps>(
+      "robione_vehicle_interface/control_mechanism_temps", 10);
   control_mechanism_volts_pub_ =
-    this->create_publisher<leo_vehicle_interface_msgs::msg::ControlMechanismVolts>(
-      "leo_vehicle_interface/control_mechanism_volts", 10);
+    this->create_publisher<robione_vehicle_interface_msgs::msg::ControlMechanismVolts>(
+      "robione_vehicle_interface/control_mechanism_volts", 10);
   dynamic_sensor_frame_pub_ =
-    this->create_publisher<leo_vehicle_interface_msgs::msg::DynamicSensorFrame>(
-      "leo_vehicle_interface/dynamic_sensor_frame", 10);
-  motion_info_pub_ = this->create_publisher<leo_vehicle_interface_msgs::msg::MotionInfo>(
-    "leo_vehicle_interface/motion_info", 10);
-  motor_info_pub_ = this->create_publisher<leo_vehicle_interface_msgs::msg::MotorInfo>(
-    "leo_vehicle_interface/motor_info", 10);
+    this->create_publisher<robione_vehicle_interface_msgs::msg::DynamicSensorFrame>(
+      "robione_vehicle_interface/dynamic_sensor_frame", 10);
+  motion_info_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::MotionInfo>(
+    "robione_vehicle_interface/motion_info", 10);
+  motor_info_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::MotorInfo>(
+    "robione_vehicle_interface/motor_info", 10);
   throttle_module_status_pub_ =
-    this->create_publisher<leo_vehicle_interface_msgs::msg::ThrottleModuleStatus>(
-      "leo_vehicle_interface/throttle_module_status", 10);
-  vehicle_errors_pub_ = this->create_publisher<leo_vehicle_interface_msgs::msg::VehicleErrors>(
-    "leo_vehicle_interface/vehicle_errors", 10);
-  vehicle_info_pub_ = this->create_publisher<leo_vehicle_interface_msgs::msg::VehicleInfo>(
-    "leo_vehicle_interface/vehicle_info", 10);
+    this->create_publisher<robione_vehicle_interface_msgs::msg::ThrottleModuleStatus>(
+      "robione_vehicle_interface/throttle_module_status", 10);
+  vehicle_errors_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleErrors>(
+    "robione_vehicle_interface/vehicle_errors", 10);
+  vehicle_info_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleInfo>(
+    "robione_vehicle_interface/vehicle_info", 10);
   vehicle_signal_status_pub_ =
-    this->create_publisher<leo_vehicle_interface_msgs::msg::VehicleSignalStatus>(
-      "leo_vehicle_interface/vehicle_signal_status", 10);
-  wheel_speeds_pub_ = this->create_publisher<leo_vehicle_interface_msgs::msg::WheelSpeeds>(
-    "leo_vehicle_interface/wheel_speeds", 10);
+    this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleSignalStatus>(
+      "robione_vehicle_interface/vehicle_signal_status", 10);
+  wheel_speeds_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::WheelSpeeds>(
+    "robione_vehicle_interface/wheel_speeds", 10);
 
 
   // autoware publishers
@@ -64,17 +64,17 @@ LeoVehicleInterfaceCanReceiver::LeoVehicleInterfaceCanReceiver(const rclcpp::Nod
   actuation_status_pub_ = create_publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>(
     "/vehicle/status/actuation_status", rclcpp::QoS{1});
 
-  diag_updater_.setHardwareID("leo_vehicle_interface_can_receiver");
-  diag_updater_.add("CAN Status", this, &LeoVehicleInterfaceCanReceiver::diagnostic_callback);
+  diag_updater_.setHardwareID("robione_vehicle_interface_can_receiver");
+  diag_updater_.add("CAN Status", this, &RobioneVehicleInterfaceCanReceiver::diagnostic_callback);
 
   // timer
   const auto period_ns = rclcpp::Rate(data_publish_rate_).period();
   data_publish_timer_ = rclcpp::create_timer(
     this, get_clock(), period_ns,
-    std::bind(&LeoVehicleInterfaceCanReceiver::data_publish_timer_callback, this));
+    std::bind(&RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback, this));
 }
 
-void LeoVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
+void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
 {
   control_mode_pub_->publish(AutowareSocketcanBridge::convert_to_autoware_control_mode_report(
     autonomous_rx_.VEHICLE_SIGNAL_STATUS));
@@ -104,12 +104,12 @@ void LeoVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
     autonomous_rx_.MOTION_INFO, "base_link"));
 }
 
-void LeoVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
+void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
   static uint8_t check_currents_id = 0;
   static uint8_t check_consumptions_id = 0;
   if (autonomous_Receive(
-        &(LeoVehicleInterfaceCanReceiver::autonomous_rx_), msg->data.data(), msg->id,
+        &(RobioneVehicleInterfaceCanReceiver::autonomous_rx_), msg->data.data(), msg->id,
         msg->dlc)) {
     switch (msg->id) {
       case CONTROL_MECHANISM_TEMPS_CANID:
@@ -159,10 +159,10 @@ void LeoVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::
 
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_control_mechanism_temps(
+void RobioneVehicleInterfaceCanReceiver::publish_control_mechanism_temps(
   const CONTROL_MECHANISM_TEMPS_t & control_mechanism_temps)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::ControlMechanismTemps();
+  auto msg = robione_vehicle_interface_msgs::msg::ControlMechanismTemps();
   msg.stamp = this->now();
   msg.pcb_temp_0 = control_mechanism_temps.pcb_temp_0;
   msg.pcb_temp_1 = control_mechanism_temps.pcb_temp_1;
@@ -170,10 +170,10 @@ void LeoVehicleInterfaceCanReceiver::publish_control_mechanism_temps(
   control_mechanism_temps_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_control_mechanism_volts(
+void RobioneVehicleInterfaceCanReceiver::publish_control_mechanism_volts(
   const CONTROL_MECHANISM_VOLTS_t & control_mechanism_volts)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::ControlMechanismVolts();
+  auto msg = robione_vehicle_interface_msgs::msg::ControlMechanismVolts();
   msg.stamp = this->now();
   msg.kl30_protected_voltage = control_mechanism_volts.ecu_kl30_protectd_voltage_phys;
   msg.kl30_2_protected_voltage = control_mechanism_volts.ecu_kl30_2_protectd_voltage_phys;
@@ -190,10 +190,10 @@ void LeoVehicleInterfaceCanReceiver::publish_control_mechanism_volts(
   control_mechanism_volts_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_dynamic_sensor_frame(
+void RobioneVehicleInterfaceCanReceiver::publish_dynamic_sensor_frame(
   const DYNAMIC_SENSOR_FRAME_t & dynamic_sensor_frame)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::DynamicSensorFrame();
+  auto msg = robione_vehicle_interface_msgs::msg::DynamicSensorFrame();
   msg.stamp = this->now();
   msg.esp_lateral_acc = dynamic_sensor_frame.esp_lateral_acceleration_phys;
   msg.esp_longitudinal_acc = dynamic_sensor_frame.esp_longitudinal_acceleration_phys;
@@ -204,9 +204,9 @@ void LeoVehicleInterfaceCanReceiver::publish_dynamic_sensor_frame(
   dynamic_sensor_frame_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_motion_info(const MOTION_INFO_t & motion_info)
+void RobioneVehicleInterfaceCanReceiver::publish_motion_info(const MOTION_INFO_t & motion_info)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::MotionInfo();
+  auto msg = robione_vehicle_interface_msgs::msg::MotionInfo();
   msg.stamp = this->now();
   msg.steering_intervention = motion_info.steering_intervention;
   msg.brake_intervention = motion_info.brake_intervention;
@@ -219,9 +219,9 @@ void LeoVehicleInterfaceCanReceiver::publish_motion_info(const MOTION_INFO_t & m
   motion_info_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_motor_info(const MOTOR_INFO_t & motor_info)
+void RobioneVehicleInterfaceCanReceiver::publish_motor_info(const MOTOR_INFO_t & motor_info)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::MotorInfo();
+  auto msg = robione_vehicle_interface_msgs::msg::MotorInfo();
   msg.stamp = this->now();
   msg.motor_oil_temp = motor_info.motor_oil_temp_phys;
   msg.motor_coolant_temp = motor_info.motor_coolant_temp_phys;
@@ -233,10 +233,10 @@ void LeoVehicleInterfaceCanReceiver::publish_motor_info(const MOTOR_INFO_t & mot
   motor_info_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_throttle_module_status(
+void RobioneVehicleInterfaceCanReceiver::publish_throttle_module_status(
   const THROTTLE_MODULE_STATUS_t & throttle_module_status)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::ThrottleModuleStatus();
+  auto msg = robione_vehicle_interface_msgs::msg::ThrottleModuleStatus();
   msg.stamp = this->now();
   msg.status = throttle_module_status.status;
   msg.target_throttle = throttle_module_status.target_throttle;
@@ -248,17 +248,17 @@ void LeoVehicleInterfaceCanReceiver::publish_throttle_module_status(
   throttle_module_status_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_vehicle_errors(const VEHICLE_ERRORS_t & vehicle_errors)
+void RobioneVehicleInterfaceCanReceiver::publish_vehicle_errors(const VEHICLE_ERRORS_t & vehicle_errors)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::VehicleErrors();
+  auto msg = robione_vehicle_interface_msgs::msg::VehicleErrors();
   msg.stamp = this->now();
 
   vehicle_errors_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_vehicle_info(const VEHICLE_INFO_t & vehicle_info)
+void RobioneVehicleInterfaceCanReceiver::publish_vehicle_info(const VEHICLE_INFO_t & vehicle_info)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::VehicleInfo();
+  auto msg = robione_vehicle_interface_msgs::msg::VehicleInfo();
   msg.stamp = this->now();
   msg.vehicle_velocity = vehicle_info.vehicle_velocity_phys;
   msg.steering_wheel_angle = vehicle_info.steering_wheel_angle_phys;
@@ -268,10 +268,10 @@ void LeoVehicleInterfaceCanReceiver::publish_vehicle_info(const VEHICLE_INFO_t &
   vehicle_info_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_vehicle_signal_status(
+void RobioneVehicleInterfaceCanReceiver::publish_vehicle_signal_status(
   const VEHICLE_SIGNAL_STATUS_t & vehicle_signal_status)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::VehicleSignalStatus();
+  auto msg = robione_vehicle_interface_msgs::msg::VehicleSignalStatus();
   msg.stamp = this->now();
   msg.fuel = vehicle_signal_status.fuel;
   msg.blinker = vehicle_signal_status.blinker;
@@ -282,9 +282,9 @@ void LeoVehicleInterfaceCanReceiver::publish_vehicle_signal_status(
   vehicle_signal_status_pub_->publish(msg);
 }
 
-void LeoVehicleInterfaceCanReceiver::publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds)
+void RobioneVehicleInterfaceCanReceiver::publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds)
 {
-  auto msg = leo_vehicle_interface_msgs::msg::WheelSpeeds();
+  auto msg = robione_vehicle_interface_msgs::msg::WheelSpeeds();
   msg.stamp = this->now();
   msg.esp_bl_wheel_speed = wheel_speeds.esp_bl_wheel_speed_phys;
   msg.esp_br_wheel_speed = wheel_speeds.esp_br_wheel_speed_phys;
@@ -294,7 +294,7 @@ void LeoVehicleInterfaceCanReceiver::publish_wheel_speeds(const WHEEL_SPEEDS_t &
 }
 
 
-void LeoVehicleInterfaceCanReceiver::diagnostic_callback(
+void RobioneVehicleInterfaceCanReceiver::diagnostic_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   double time_since_last_control_mechanism_temps =
@@ -396,8 +396,8 @@ void LeoVehicleInterfaceCanReceiver::diagnostic_callback(
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Wheel Speeds OK");
   }
 }
-}  // namespace leo_vehicle_interface
+}  // namespace robione_vehicle_interface
 
 #include <rclcpp_components/register_node_macro.hpp>
 
-RCLCPP_COMPONENTS_REGISTER_NODE(leo_vehicle_interface::LeoVehicleInterfaceCanReceiver)
+RCLCPP_COMPONENTS_REGISTER_NODE(robione_vehicle_interface::RobioneVehicleInterfaceCanReceiver)

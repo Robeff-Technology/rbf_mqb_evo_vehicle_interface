@@ -1,4 +1,4 @@
-// Copyright 2025 LeoDrive.
+// Copyright 2025 Robeff.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 // limitations under the License.
 //
 
-#ifndef LEO_VEHICLE_INTERFACE_CAN_RECV_HPP
-#define LEO_VEHICLE_INTERFACE_CAN_RECV_HPP
+#ifndef ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
+#define ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
 
 
 #include "can_interface/autonomous-binutil.h"
@@ -23,16 +23,16 @@
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
 #include "can_msgs/msg/frame.hpp"
-#include "leo_vehicle_interface_msgs/msg/control_mechanism_temps.hpp"
-#include "leo_vehicle_interface_msgs/msg/control_mechanism_volts.hpp"
-#include "leo_vehicle_interface_msgs/msg/dynamic_sensor_frame.hpp"
-#include "leo_vehicle_interface_msgs/msg/motion_info.hpp"
-#include "leo_vehicle_interface_msgs/msg/motor_info.hpp"
-#include "leo_vehicle_interface_msgs/msg/throttle_module_status.hpp"
-#include "leo_vehicle_interface_msgs/msg/vehicle_errors.hpp"
-#include "leo_vehicle_interface_msgs/msg/vehicle_info.hpp"
-#include "leo_vehicle_interface_msgs/msg/vehicle_signal_status.hpp"
-#include "leo_vehicle_interface_msgs/msg/wheel_speeds.hpp"
+#include "robione_vehicle_interface_msgs/msg/control_mechanism_temps.hpp"
+#include "robione_vehicle_interface_msgs/msg/control_mechanism_volts.hpp"
+#include "robione_vehicle_interface_msgs/msg/dynamic_sensor_frame.hpp"
+#include "robione_vehicle_interface_msgs/msg/motion_info.hpp"
+#include "robione_vehicle_interface_msgs/msg/motor_info.hpp"
+#include "robione_vehicle_interface_msgs/msg/throttle_module_status.hpp"
+#include "robione_vehicle_interface_msgs/msg/vehicle_errors.hpp"
+#include "robione_vehicle_interface_msgs/msg/vehicle_info.hpp"
+#include "robione_vehicle_interface_msgs/msg/vehicle_signal_status.hpp"
+#include "robione_vehicle_interface_msgs/msg/wheel_speeds.hpp"
 #include <autoware_control_msgs/msg/control.hpp>
 #include <autoware_vehicle_msgs/msg/control_mode_report.hpp>
 #include <autoware_vehicle_msgs/msg/engage.hpp>
@@ -57,14 +57,14 @@
 #include <string>
 #include <vector>
 
-namespace leo_vehicle_interface
+namespace robione_vehicle_interface
 {
-class LeoVehicleInterfaceCanReceiver : public rclcpp::Node
+class RobioneVehicleInterfaceCanReceiver : public rclcpp::Node
 {
 public:
-  explicit LeoVehicleInterfaceCanReceiver(const rclcpp::NodeOptions & options);
+  explicit RobioneVehicleInterfaceCanReceiver(const rclcpp::NodeOptions & options);
 
-  ~LeoVehicleInterfaceCanReceiver() override = default;
+  ~RobioneVehicleInterfaceCanReceiver() override = default;
 
   /**
    * @brief It receives interface message from socketcan ROS2 bridge
@@ -79,21 +79,21 @@ private:
   diagnostic_updater::Updater diag_updater_;
 
   // messages send to computer
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::ControlMechanismTemps>::SharedPtr
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::ControlMechanismTemps>::SharedPtr
     control_mechanism_temps_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::ControlMechanismVolts>::SharedPtr
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::ControlMechanismVolts>::SharedPtr
     control_mechanism_volts_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::DynamicSensorFrame>::SharedPtr
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::DynamicSensorFrame>::SharedPtr
     dynamic_sensor_frame_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::MotionInfo>::SharedPtr motion_info_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::MotorInfo>::SharedPtr motor_info_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::ThrottleModuleStatus>::SharedPtr
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::MotionInfo>::SharedPtr motion_info_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::MotorInfo>::SharedPtr motor_info_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::ThrottleModuleStatus>::SharedPtr
     throttle_module_status_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::VehicleErrors>::SharedPtr vehicle_errors_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::VehicleInfo>::SharedPtr vehicle_info_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::VehicleSignalStatus>::SharedPtr
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleErrors>::SharedPtr vehicle_errors_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleInfo>::SharedPtr vehicle_info_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleSignalStatus>::SharedPtr
     vehicle_signal_status_pub_;
-  rclcpp::Publisher<leo_vehicle_interface_msgs::msg::WheelSpeeds>::SharedPtr wheel_speeds_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::WheelSpeeds>::SharedPtr wheel_speeds_pub_;
 
 
   autonomous_rx_t autonomous_rx_;
@@ -153,5 +153,5 @@ private:
   // Timer callback
   void data_publish_timer_callback();
 };
-}  // namespace leo_vehicle_interface
-#endif  // LEO_VEHICLE_INTERFACE_CAN_RECV_HPP
+}  // namespace robione_vehicle_interface
+#endif  // ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP

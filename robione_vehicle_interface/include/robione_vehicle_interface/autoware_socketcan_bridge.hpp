@@ -14,9 +14,9 @@
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
-#include <leo_vehicle_interface_msgs/msg/front_wheel_command.hpp>
-#include <leo_vehicle_interface_msgs/msg/longitudinal_command.hpp>
-#include <leo_vehicle_interface_msgs/msg/vehicle_command.hpp>
+#include <robione_vehicle_interface_msgs/msg/front_wheel_command.hpp>
+#include <robione_vehicle_interface_msgs/msg/longitudinal_command.hpp>
+#include <robione_vehicle_interface_msgs/msg/vehicle_command.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_status_stamped.hpp>
@@ -25,7 +25,7 @@
 
 #include <cstring>
 
-namespace leo_vehicle_interface
+namespace robione_vehicle_interface
 {
 class AutowareSocketcanBridge
 {
@@ -66,8 +66,8 @@ public:
     tier4_control_msgs::msg::GateMode & operation_mode_state,
     autoware_vehicle_msgs::msg::Engage & engage_cmd);
 
-  static leo_vehicle_interface_msgs::msg::FrontWheelCommand convert_to_front_wheel_cmd();
-  static leo_vehicle_interface_msgs::msg::LongitudinalCommand convert_to_longitudinal_cmd();
-  static leo_vehicle_interface_msgs::msg::VehicleCommand convert_to_vehicle_cmd();
+  static robione_vehicle_interface_msgs::msg::FrontWheelCommand convert_to_front_wheel_cmd();
+  static robione_vehicle_interface_msgs::msg::LongitudinalCommand convert_to_longitudinal_cmd();
+  static robione_vehicle_interface_msgs::msg::VehicleCommand convert_to_vehicle_cmd();
 };
-}  // namespace leo_vehicle_interface
+}  // namespace robione_vehicle_interface

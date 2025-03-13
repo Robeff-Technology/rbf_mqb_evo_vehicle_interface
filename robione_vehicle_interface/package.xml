@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>leo_vehicle_interface</name>
+  <name>robione_vehicle_interface</name>
   <version>1.0.0</version>
-  <description>Leo vehicle interface</description>
+  <description>Vehicle interface software for robione facility robots.</description>
   <maintainer email="elaydin@robeff.com">yelaydin</maintainer>
   <license>Apache License 2.0</license>
 
@@ -24,7 +24,7 @@
   <depend>std_msgs</depend>
   <depend>can_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>leo_vehicle_interface_msgs</depend>
+  <depend>robione_vehicle_interface_msgs</depend>
   
 
   <test_depend>ament_lint_auto</test_depend>
