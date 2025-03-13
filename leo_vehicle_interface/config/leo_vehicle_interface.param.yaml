@@ -1,0 +1,8 @@
+/**:
+  ros__parameters:
+    base_frame_id: "base_link"
+    can_recv_timeout_threshold: 2.0 # seconds
+    data_publish_rate: 100 # [hz]
+    can_data_send_rate: 100 # [hz]
+    steering_angle_rate: 50.0 # [deg/s]
+    vehicle_velocity_limit: 10.0 # [m/s]

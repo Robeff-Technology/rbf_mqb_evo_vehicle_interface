@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="leo_vehicle_interface_param_path" default="$(find-pkg-share leo_vehicle_interface)/config/leo_vehicle_interface.param.yaml"/>
+
+  <!-- CAN Receiver -->
+  <node pkg="leo_vehicle_interface" exec="leo_vehicle_interface_recv_node" name="leo_vehicle_interface_recv" output="both">
+    <param from="$(var leo_vehicle_interface_param_path)"/>
+  </node>
+
+    <!-- CAN Receiver -->
+  <node pkg="leo_vehicle_interface" exec="leo_vehicle_interface_sender_node" name="leo_vehicle_interface_sender" output="both">
+    <param from="$(var leo_vehicle_interface_param_path)"/>
+  </node>
+
+</launch>

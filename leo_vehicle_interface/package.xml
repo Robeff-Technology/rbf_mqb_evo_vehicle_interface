@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>leo_vehicle_interface</name>
+  <version>1.0.0</version>
+  <description>Leo vehicle interface</description>
+  <maintainer email="elaydin@robeff.com">yelaydin</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>autoware_adapi_v1_msgs</depend>
+  <depend>autoware_control_msgs</depend>
+  <depend>autoware_system_msgs</depend>
+  <depend>autoware_vehicle_info_utils</depend>
+  <depend>tier4_debug_msgs</depend>
+  <depend>tier4_vehicle_msgs</depend>
+  <depend>tier4_control_msgs</depend>
+  <depend>diagnostic_updater</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
+  <depend>diagnostic_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>can_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>leo_vehicle_interface_msgs</depend>
+  <depend>flux_pds_msgs</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Interface -->
+  <include file="$(find-pkg-share leo_vehicle_interface)/launch/leo_vehicle_interface.launch.xml"/>
+
+  <!-- Socketcan -->
+  <include file="$(find-pkg-share ros2_socketcan)/launch/socket_can_bridge.launch.xml"/>
+</launch>
