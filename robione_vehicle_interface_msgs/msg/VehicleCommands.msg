@@ -21,3 +21,4 @@ uint8 headlight
 uint8 gear
 uint8 handbrake # not implemented yet
 uint8 emergency
+uint8 horn

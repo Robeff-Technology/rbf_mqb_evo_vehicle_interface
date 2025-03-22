@@ -7,9 +7,8 @@
 namespace robione_vehicle_interface
 {
 
-FRONT_WHEEL_COMMANDS_t front_wheel_cmd_{};
-LONGITUDINAL_COMMANDS_t longitudinal_cmd_{};
 VEHICLE_COMMANDS_t vehicle_cmd_{};
+VEHICLE_MOTION_COMMANDS_t vehicle_motion_cmd_{};
 
 const double degree_to_radian = M_PI / 180.0;
 const double radian_to_degree = 180.0 / M_PI;
@@ -19,12 +18,12 @@ const double kph_to_mps = 1.0 / mps_to_kph;
 
 autoware_vehicle_msgs::msg::ControlModeReport
 AutowareSocketcanBridge::convert_to_autoware_control_mode_report(
-  const VEHICLE_SIGNAL_STATUS_t & control_mode_report)
+  const VEHICLE_STATUS_t & control_mode_report)
 {
   autoware_vehicle_msgs::msg::ControlModeReport control_mode_report_msg;
   control_mode_report_msg.stamp = rclcpp::Clock().now();
 
-  if (control_mode_report.mode == mode_VEHICLE_SIGNAL_STATUS_CONTROLLER_AUTONOMOUS) {
+  if (control_mode_report.mode == mode_VEHICLE_STATUS_CONTROLLER_AUTONOMOUS) {
     control_mode_report_msg.mode = autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
   } else {
     control_mode_report_msg.mode = autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
@@ -33,18 +32,18 @@ AutowareSocketcanBridge::convert_to_autoware_control_mode_report(
 }
 
 autoware_vehicle_msgs::msg::GearReport AutowareSocketcanBridge::convert_to_autoware_gear_report(
-  const VEHICLE_SIGNAL_STATUS_t & gear_report)
+  const VEHICLE_STATUS_t & gear_report)
 {
   autoware_vehicle_msgs::msg::GearReport gear_report_msg;
   gear_report_msg.stamp = rclcpp::Clock().now();
 
-  if (gear_report.gear == gear_VEHICLE_SIGNAL_STATUS_D) {
+  if (gear_report.gear == gear_VEHICLE_STATUS_GEAR_D) {
     gear_report_msg.report = autoware_vehicle_msgs::msg::GearReport::DRIVE;
-  } else if (gear_report.gear == gear_VEHICLE_SIGNAL_STATUS_R) {
+  } else if (gear_report.gear == gear_VEHICLE_STATUS_GEAR_R) {
     gear_report_msg.report = autoware_vehicle_msgs::msg::GearReport::REVERSE;
-  } else if (gear_report.gear == gear_VEHICLE_SIGNAL_STATUS_P) {
+  } else if (gear_report.gear == gear_VEHICLE_STATUS_GEAR_P) {
     gear_report_msg.report = autoware_vehicle_msgs::msg::GearReport::PARK;
-  } else if (gear_report.gear == gear_VEHICLE_SIGNAL_STATUS_N) {
+  } else if (gear_report.gear == gear_VEHICLE_STATUS_GEAR_N) {
     gear_report_msg.report = autoware_vehicle_msgs::msg::GearReport::NEUTRAL;
   } else {
     gear_report_msg.report = autoware_vehicle_msgs::msg::GearReport::NONE;
@@ -55,12 +54,12 @@ autoware_vehicle_msgs::msg::GearReport AutowareSocketcanBridge::convert_to_autow
 
 autoware_vehicle_msgs::msg::HazardLightsReport
 AutowareSocketcanBridge::convert_to_autoware_hazard_light_report(
-  const VEHICLE_SIGNAL_STATUS_t & hazard_lights_report)
+  const VEHICLE_STATUS_t & hazard_lights_report)
 {
   autoware_vehicle_msgs::msg::HazardLightsReport hazard_lights_report_msg;
   hazard_lights_report_msg.stamp = rclcpp::Clock().now();
 
-  if (hazard_lights_report.blinker == blinker_VEHICLE_SIGNAL_STATUS_HAZARD_LIGHT) {
+  if (hazard_lights_report.blinker == blinker_VEHICLE_STATUS_HAZARD_LIGHT) {
     hazard_lights_report_msg.report = autoware_vehicle_msgs::msg::HazardLightsReport::ENABLE;
   } else {
     hazard_lights_report_msg.report = autoware_vehicle_msgs::msg::HazardLightsReport::DISABLE;
@@ -81,15 +80,15 @@ AutowareSocketcanBridge::convert_to_autoware_steering_report(const VEHICLE_INFO_
 
 autoware_vehicle_msgs::msg::TurnIndicatorsReport
 AutowareSocketcanBridge::convert_to_autoware_turn_indicators_report(
-  const VEHICLE_SIGNAL_STATUS_t & turn_indicators_report)
+  const VEHICLE_STATUS_t & turn_indicators_report)
 {
   autoware_vehicle_msgs::msg::TurnIndicatorsReport turn_indicators_report_msg;
   turn_indicators_report_msg.stamp = rclcpp::Clock().now();
 
-  if (turn_indicators_report.blinker == blinker_VEHICLE_SIGNAL_STATUS_RIGHT_BLINKER) {
+  if (turn_indicators_report.blinker == blinker_VEHICLE_STATUS_BLINKER_RIGHT) {
     turn_indicators_report_msg.report =
       autoware_vehicle_msgs::msg::TurnIndicatorsReport::ENABLE_RIGHT;
-  } else if (turn_indicators_report.blinker == blinker_VEHICLE_SIGNAL_STATUS_LEFT_BLINKER) {
+  } else if (turn_indicators_report.blinker == blinker_VEHICLE_STATUS_BLINKER_LEFT) {
     turn_indicators_report_msg.report =
       autoware_vehicle_msgs::msg::TurnIndicatorsReport::ENABLE_LEFT;
   } else {
@@ -101,16 +100,16 @@ AutowareSocketcanBridge::convert_to_autoware_turn_indicators_report(
 
 autoware_vehicle_msgs::msg::VelocityReport
 AutowareSocketcanBridge::convert_to_autoware_velocity_report(
-  const VEHICLE_INFO_t & velocity_report, const VEHICLE_SIGNAL_STATUS_t & gear_report,
+  const VEHICLE_INFO_t & vehicle_info, const VEHICLE_STATUS_t & gear_report,
   std::string base_link)
 {
   autoware_vehicle_msgs::msg::VelocityReport velocity_report_msg;
   velocity_report_msg.header.frame_id = base_link;
   velocity_report_msg.header.stamp = rclcpp::Clock().now();
 
-  velocity_report_msg.longitudinal_velocity = gear_report.gear == gear_VEHICLE_SIGNAL_STATUS_R
-                                                ? -velocity_report.vehicle_velocity_phys
-                                                : velocity_report.vehicle_velocity_phys;
+  velocity_report_msg.longitudinal_velocity = gear_report.gear == gear_VEHICLE_STATUS_GEAR_R
+                                                ? -vehicle_info.vehicle_velocity_phys
+                                                : vehicle_info.vehicle_velocity_phys;
 
   velocity_report_msg.longitudinal_velocity =
     velocity_report_msg.longitudinal_velocity * kph_to_mps;
@@ -129,6 +128,7 @@ AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(
   return steering_wheel_status_msg;
 }
 
+/* ## Is this necessary? There is nothing about throttle and brake in DBC file
 tier4_vehicle_msgs::msg::ActuationStatusStamped
 AutowareSocketcanBridge::convert_to_tier4_actuation_status(
   const MOTION_INFO_t & actuation_status, std::string base_link)
@@ -142,60 +142,57 @@ AutowareSocketcanBridge::convert_to_tier4_actuation_status(
 
   return actuation_status_msg;
 }
+*/
 
-robione_vehicle_interface_msgs::msg::FrontWheelCommand
-AutowareSocketcanBridge::convert_to_front_wheel_cmd()
+robione_vehicle_interface_msgs::msg::VehicleMotionCommands
+AutowareSocketcanBridge::convert_to_vehicle_motion_cmd()
 {
-  robione_vehicle_interface_msgs::msg::FrontWheelCommand front_wheel_cmd_msg;
-  front_wheel_cmd_msg.stamp = rclcpp::Clock().now();
+  robione_vehicle_interface_msgs::msg::VehicleMotionCommands vehicle_motion_cmd_msg;
+  vehicle_motion_cmd_msg.stamp = rclcpp::Clock().now();
 
-  front_wheel_cmd_msg.set_tire_angle = front_wheel_cmd_.set_front_wheel_tire_angle;
-  front_wheel_cmd_msg.set_tire_angle_rate = front_wheel_cmd_.set_front_wheel_angle_rate;
+  vehicle_motion_cmd_msg.set_front_wheel_tire_angle = vehicle_motion_cmd_.set_front_wheel_tire_angle_phys;
+  vehicle_motion_cmd_msg.set_front_wheel_angle_rate = vehicle_motion_cmd_.set_front_wheel_angle_rate_phys;
+  vehicle_motion_cmd_msg.set_velocity = vehicle_motion_cmd_.set_velocity_phys;
+  vehicle_motion_cmd_msg.set_limit_velocity = vehicle_motion_cmd_.set_limit_velocity_phys;
 
-  return front_wheel_cmd_msg;
+  return vehicle_motion_cmd_msg;
 }
 
-robione_vehicle_interface_msgs::msg::LongitudinalCommand
-AutowareSocketcanBridge::convert_to_longitudinal_cmd()
+robione_vehicle_interface_msgs::msg::VehicleCommands AutowareSocketcanBridge::convert_to_vehicle_cmd()
 {
-  robione_vehicle_interface_msgs::msg::LongitudinalCommand long_cmd_;
-  long_cmd_.stamp = rclcpp::Clock().now();
-
-  long_cmd_.set_velocity = longitudinal_cmd_.set_velocity;
-  long_cmd_.set_limit_velocity = longitudinal_cmd_.set_limit_velocity;
-
-  return long_cmd_;
-}
-
-robione_vehicle_interface_msgs::msg::VehicleCommand AutowareSocketcanBridge::convert_to_vehicle_cmd()
-{
-  robione_vehicle_interface_msgs::msg::VehicleCommand vehicle_cmd_msg;
+  robione_vehicle_interface_msgs::msg::VehicleCommands vehicle_cmd_msg;
   vehicle_cmd_msg.stamp = rclcpp::Clock().now();
 
   vehicle_cmd_msg.set_autonomous = vehicle_cmd_.set_autonomous;
-  vehicle_cmd_msg.gear = vehicle_cmd_.gear;
   vehicle_cmd_msg.blinker = vehicle_cmd_.blinker;
+  vehicle_cmd_msg.headlight = vehicle_cmd_.headlight;
+  vehicle_cmd_msg.gear = vehicle_cmd_.gear;
+  vehicle_cmd_msg.handbrake = vehicle_cmd_.hand_brake;
   vehicle_cmd_msg.emergency = vehicle_cmd_.emergency_request;
+  vehicle_cmd_msg.horn = vehicle_cmd_.horn;
 
   return vehicle_cmd_msg;
 }
 
-can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_front_wheel_cmd(
-  const autoware_control_msgs::msg::Control & control_cmd, float tire_rate)
+can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_vehicle_motion_cmd(
+  const autoware_control_msgs::msg::Control & control_cmd, float velocity_limit, float tire_rate)
 {
   uint8_t len, ide;
   auto frame = can_msgs::msg::Frame();
   frame.header.stamp = rclcpp::Clock().now();
 
-  front_wheel_cmd_.set_front_wheel_tire_angle = control_cmd.lateral.steering_tire_angle;
-
+  vehicle_motion_cmd_.set_velocity_phys = control_cmd.longitudinal.velocity;
+  vehicle_motion_cmd_.set_limit_velocity_phys = velocity_limit;
+  vehicle_motion_cmd_.set_front_wheel_tire_angle_phys = control_cmd.lateral.steering_tire_angle;
+  
+  // Check if tire rate is defined
   if (control_cmd.lateral.is_defined_steering_tire_rotation_rate == false) {
-    front_wheel_cmd_.set_front_wheel_angle_rate = tire_rate;
+    vehicle_motion_cmd_.set_front_wheel_angle_rate_phys = tire_rate;
   } else {
-    front_wheel_cmd_.set_front_wheel_angle_rate = control_cmd.lateral.steering_tire_rotation_rate;
+    vehicle_motion_cmd_.set_front_wheel_angle_rate_phys = control_cmd.lateral.steering_tire_rotation_rate;
   }
 
-  frame.id = Pack_FRONT_WHEEL_COMMANDS_autonomous(&front_wheel_cmd_, frame.data.data(), &len, &ide);
+  frame.id = Pack_VEHICLE_MOTION_COMMANDS_VCU(&vehicle_motion_cmd_, frame.data.data(), &len, &ide);
   frame.is_extended = ide;
   frame.is_rtr = false;
   frame.dlc = len;
@@ -203,24 +200,6 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_front_wheel_cm
   return frame;
 }
 
-can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_longitudinal_cmd(
-  const autoware_control_msgs::msg::Control & control_cmd, float velocity_limit)
-{
-  uint8_t len, ide;
-  auto frame = can_msgs::msg::Frame();
-  frame.header.stamp = rclcpp::Clock().now();
-
-  longitudinal_cmd_.set_velocity = control_cmd.longitudinal.velocity;
-  longitudinal_cmd_.set_limit_velocity = velocity_limit;
-
-  frame.id =
-    Pack_LONGITUDINAL_COMMANDS_autonomous(&longitudinal_cmd_, frame.data.data(), &len, &ide);
-  frame.is_extended = ide;
-  frame.is_rtr = false;
-  frame.dlc = len;
-
-  return frame;
-}
 
 can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   autoware_vehicle_msgs::msg::GearCommand & gear_cmd,
@@ -234,6 +213,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   auto frame = can_msgs::msg::Frame();
   frame.header.stamp = rclcpp::Clock().now();
 
+  // Set Autonomous Mode
   if (engage_cmd.engage) {
     if (gate_mode_cmd.data == tier4_control_msgs::msg::GateMode::AUTO) {
       vehicle_cmd_.set_autonomous = 1;
@@ -244,25 +224,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
     vehicle_cmd_.set_autonomous = 0;
   }
 
-  switch (gear_cmd.command) {
-    case autoware_vehicle_msgs::msg::GearCommand::DRIVE:
-      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_D;
-      break;
-    case autoware_vehicle_msgs::msg::GearCommand::REVERSE:
-      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_R;
-      break;
-    case autoware_vehicle_msgs::msg::GearCommand::PARK:
-      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_P;
-      break;
-    case autoware_vehicle_msgs::msg::GearCommand::NEUTRAL:
-      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_N;
-      break;
-    default:
-      break;
-  }
-
-  vehicle_cmd_.blinker = blinker_VEHICLE_COMMANDS_NO_BLINKER;
-
+  // Set Blinker
   if (
     turn_indicators_cmd.command ==
     autoware_vehicle_msgs::msg::TurnIndicatorsCommand::ENABLE_RIGHT) {
@@ -275,9 +237,37 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
     vehicle_cmd_.blinker = blinker_VEHICLE_COMMANDS_BLINKER_HAZARD;
   }
 
+  // Set Headlight
+  vehicle_cmd_.headlight = headlight_VEHICLE_COMMANDS_HEADLIGHT_CLOSE;
+
+  // Set Gear
+  switch (gear_cmd.command) {
+    case autoware_vehicle_msgs::msg::GearCommand::DRIVE:
+      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_GEAR_D;
+      break;
+    case autoware_vehicle_msgs::msg::GearCommand::REVERSE:
+      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_GEAR_R;
+      break;
+    case autoware_vehicle_msgs::msg::GearCommand::PARK:
+      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_GEAR_P;
+      break;
+    case autoware_vehicle_msgs::msg::GearCommand::NEUTRAL:
+      vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_GEAR_N;
+      break;
+    default:
+      break;
+  }
+
+  // Set Handbrake
+  vehicle_cmd_.hand_brake = hand_brake_VEHICLE_COMMANDS_HANDBRAKE_RELEASE;
+
+  // Set Emergency Request
   vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency;
 
-  frame.id = Pack_VEHICLE_COMMANDS_autonomous(&vehicle_cmd_, frame.data.data(), &len, &ide);
+  // Set Horn
+  vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_CLOSE;
+
+  frame.id = Pack_VEHICLE_COMMANDS_VCU(&vehicle_cmd_, frame.data.data(), &len, &ide);
   frame.is_extended = ide;
   frame.is_rtr = false;
   frame.dlc = len;

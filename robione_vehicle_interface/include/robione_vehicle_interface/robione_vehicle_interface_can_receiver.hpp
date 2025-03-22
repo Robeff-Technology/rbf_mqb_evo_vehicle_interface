@@ -17,22 +17,17 @@
 #define ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
 
 
-#include "can_interface/autonomous-binutil.h"
+
+#include "can_interface/vcu-binutil.h"
+
 #include "rclcpp/rclcpp.hpp"
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
 #include "can_msgs/msg/frame.hpp"
-#include "robione_vehicle_interface_msgs/msg/control_mechanism_temps.hpp"
-#include "robione_vehicle_interface_msgs/msg/control_mechanism_volts.hpp"
-#include "robione_vehicle_interface_msgs/msg/dynamic_sensor_frame.hpp"
-#include "robione_vehicle_interface_msgs/msg/motion_info.hpp"
-#include "robione_vehicle_interface_msgs/msg/motor_info.hpp"
-#include "robione_vehicle_interface_msgs/msg/throttle_module_status.hpp"
-#include "robione_vehicle_interface_msgs/msg/vehicle_errors.hpp"
+
 #include "robione_vehicle_interface_msgs/msg/vehicle_info.hpp"
-#include "robione_vehicle_interface_msgs/msg/vehicle_signal_status.hpp"
-#include "robione_vehicle_interface_msgs/msg/wheel_speeds.hpp"
+#include "robione_vehicle_interface_msgs/msg/vehicle_status.hpp"
 #include <autoware_control_msgs/msg/control.hpp>
 #include <autoware_vehicle_msgs/msg/control_mode_report.hpp>
 #include <autoware_vehicle_msgs/msg/engage.hpp>
@@ -78,38 +73,18 @@ private:
   // diagnostics
   diagnostic_updater::Updater diag_updater_;
 
-  // messages send to computer
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::ControlMechanismTemps>::SharedPtr
-    control_mechanism_temps_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::ControlMechanismVolts>::SharedPtr
-    control_mechanism_volts_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::DynamicSensorFrame>::SharedPtr
-    dynamic_sensor_frame_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::MotionInfo>::SharedPtr motion_info_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::MotorInfo>::SharedPtr motor_info_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::ThrottleModuleStatus>::SharedPtr
-    throttle_module_status_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleErrors>::SharedPtr vehicle_errors_pub_;
+
   rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleInfo>::SharedPtr vehicle_info_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleSignalStatus>::SharedPtr
-    vehicle_signal_status_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::WheelSpeeds>::SharedPtr wheel_speeds_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleStatus>::SharedPtr
+    vehicle_status_pub_;
 
 
-  autonomous_rx_t autonomous_rx_;
+  vcu_rx_t vcu_rx_;
 
 
-  // sending messages functions
-  void publish_control_mechanism_temps(const CONTROL_MECHANISM_TEMPS_t & control_mechanism_temps);
-  void publish_control_mechanism_volts(const CONTROL_MECHANISM_VOLTS_t & control_mechanism_volts);
-  void publish_dynamic_sensor_frame(const DYNAMIC_SENSOR_FRAME_t & dynamic_sensor_frame);
-  void publish_motion_info(const MOTION_INFO_t & motion_info);
-  void publish_motor_info(const MOTOR_INFO_t & motor_info);
-  void publish_throttle_module_status(const THROTTLE_MODULE_STATUS_t & throttle_module_status);
-  void publish_vehicle_errors(const VEHICLE_ERRORS_t & vehicle_errors);
   void publish_vehicle_info(const VEHICLE_INFO_t & vehicle_info);
-  void publish_vehicle_signal_status(const VEHICLE_SIGNAL_STATUS_t & vehicle_signal_status);
-  void publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds);
+  void publish_vehicle_status(const VEHICLE_STATUS_t & vehicle_signal_status);
+  // void publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds);
 
 
 

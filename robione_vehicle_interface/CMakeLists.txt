@@ -15,8 +15,6 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(can_interface SHARED
-        src/can_interface/autonomous.c
-        src/can_interface/autonomous-binutil.c
         src/can_interface/vcu.c
         src/can_interface/vcu-binutil.c
 

@@ -11,9 +11,8 @@
 #include <autoware_vehicle_msgs/msg/hazard_lights_command.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_command.hpp>
 #include <autoware_vehicle_msgs/srv/control_mode_command.hpp>
-#include <robione_vehicle_interface_msgs/msg/front_wheel_command.hpp>
-#include <robione_vehicle_interface_msgs/msg/longitudinal_command.hpp>
-#include <robione_vehicle_interface_msgs/msg/vehicle_command.hpp>
+#include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
+#include <robione_vehicle_interface_msgs/msg/vehicle_commands.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/vehicle_emergency_stamped.hpp>
@@ -41,11 +40,9 @@ private:
   void diagnostic_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
   // publishers for debug
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::FrontWheelCommand>::SharedPtr
-    front_wheel_cmd_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::LongitudinalCommand>::SharedPtr
-    longitudinal_cmd_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleCommand>::SharedPtr vehicle_cmd_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleMotionCommands>::SharedPtr
+    vehicle_motion_cmd_pub_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleCommands>::SharedPtr vehicle_cmd_pub_;
 
   // subscriptions
   rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_frame_pub_;

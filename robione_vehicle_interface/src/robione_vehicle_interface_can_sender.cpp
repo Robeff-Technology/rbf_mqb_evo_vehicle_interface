@@ -15,11 +15,9 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(const rclcpp:
   diag_updater_.add("CAN Status", this, &RobioneVehicleInterfaceCanSender::diagnostic_callback);
 
   // publishers
-  front_wheel_cmd_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::FrontWheelCommand>(
-    "/robione_vehicle_interface/front_wheel_cmd", rclcpp::QoS(1));
-  longitudinal_cmd_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::LongitudinalCommand>(
-    "/robione_vehicle_interface/longitudinal_cmd", rclcpp::QoS(1));
-  vehicle_cmd_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::VehicleCommand>(
+  vehicle_motion_cmd_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::VehicleMotionCommands>(
+    "/robione_vehicle_interface/vehicle_motion_cmd", rclcpp::QoS(1));
+  vehicle_cmd_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::VehicleCommands>(
     "/robione_vehicle_interface/vehicle_cmd", rclcpp::QoS(1));
 
   // subscriptions
@@ -62,7 +60,6 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(const rclcpp:
 }
 void RobioneVehicleInterfaceCanSender::data_publish_timer_callback()
 {
-  bool is_autoware_running = false;
   rclcpp::Clock clock{RCL_ROS_TIME};
   bool is_all_received = true;  // Flag to track if all messages are received
 
@@ -104,21 +101,19 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback()
 
   // If all the required commands are received, publish the CAN messages
   if (is_all_received) {
+
     can_frame_pub_->publish(
-      AutowareSocketcanBridge::convert_autoware_to_front_wheel_cmd(*control_cmd_, steer_rate_));
-    
-    front_wheel_cmd_pub_->publish(AutowareSocketcanBridge::convert_to_front_wheel_cmd());
-    
-    can_frame_pub_->publish(
-      AutowareSocketcanBridge::convert_autoware_to_longitudinal_cmd(*control_cmd_, velocity_limit_));
-    
-    longitudinal_cmd_pub_->publish(AutowareSocketcanBridge::convert_to_longitudinal_cmd());
+      AutowareSocketcanBridge::convert_autoware_to_vehicle_motion_cmd(*control_cmd_, velocity_limit_, steer_rate_));
     
     can_frame_pub_->publish(AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
       *gear_cmd_, *turn_indicators_cmd_, *hazard_lights_cmd_, *vehicle_emergency_cmd_,
       *gate_mode_cmd_, *engage_cmd_));
     
+    // ROS2 Debug Messages 
+    vehicle_motion_cmd_pub_->publish(AutowareSocketcanBridge::convert_to_vehicle_motion_cmd());
+
     vehicle_cmd_pub_->publish(AutowareSocketcanBridge::convert_to_vehicle_cmd());
+    
   }
 }
 
@@ -163,11 +158,6 @@ void RobioneVehicleInterfaceCanSender::vehicle_emergency_cmd_callback(
   const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg)
 {
   vehicle_emergency_cmd_ = msg;
-}
-
-void RobioneVehicleInterfaceCanSender::diagnostic_callback(
-  diagnostic_updater::DiagnosticStatusWrapper & stat)
-{
 }
 
 }  // namespace robione_vehicle_interface

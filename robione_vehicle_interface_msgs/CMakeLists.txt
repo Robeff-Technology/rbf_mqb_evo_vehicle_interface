@@ -10,19 +10,10 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-        "msg/WheelSpeeds.msg"
-        "msg/VehicleSignalStatus.msg"
+        "msg/VehicleCommands.msg"
         "msg/VehicleInfo.msg"
-        "msg/VehicleErrors.msg"
-        "msg/VehicleCommand.msg"
-        "msg/ThrottleModuleStatus.msg"
-        "msg/MotorInfo.msg"
-        "msg/MotionInfo.msg"
-        "msg/LongitudinalCommand.msg"
-        "msg/FrontWheelCommand.msg"
-        "msg/DynamicSensorFrame.msg"
-        "msg/ControlMechanismVolts.msg"
-        "msg/ControlMechanismTemps.msg"
+        "msg/VehicleMotionCommands.msg"
+        "msg/VehicleStatus.msg"
         DEPENDENCIES std_msgs
         ADD_LINTER_TESTS
 )
