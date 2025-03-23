@@ -22,7 +22,7 @@ RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(const rcl
     "robione_vehicle_interface/vehicle_info", 10);
   vehicle_status_pub_ =
     this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleStatus>(
-      "robione_vehicle_interface/vehicle_signal_status", 10);
+      "robione_vehicle_interface/vehicle_status", 10);
 
   // autoware publishers
   control_mode_pub_ = create_publisher<autoware_vehicle_msgs::msg::ControlModeReport>(
@@ -40,8 +40,8 @@ RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(const rcl
   steering_wheel_status_pub_ =
     create_publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>(
       "/vehicle/status/steering_wheel_status", 1);
-  actuation_status_pub_ = create_publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>(
-    "/vehicle/status/actuation_status", rclcpp::QoS{1});
+  // actuation_status_pub_ = create_publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>(
+  //   "/vehicle/status/actuation_status", rclcpp::QoS{1});
 
   diag_updater_.setHardwareID("robione_vehicle_interface_can_receiver");
   diag_updater_.add("CAN Status", this, &RobioneVehicleInterfaceCanReceiver::diagnostic_callback);
@@ -79,8 +79,8 @@ void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
     AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(
       vcu_rx_.VEHICLE_INFO));
 
-  actuation_status_pub_->publish(AutowareSocketcanBridge::convert_to_tier4_actuation_status(
-    vcu_rx_.VEHICLE_INFO, "base_link"));
+  // actuation_status_pub_->publish(AutowareSocketcanBridge::convert_to_tier4_actuation_status(
+  //   vcu_rx_.VEHICLE_INFO, "base_link"));
 }
 
 void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
@@ -90,10 +90,12 @@ void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Fra
         msg->dlc)) {
     switch (msg->id) {
       case VEHICLE_INFO_CANID:
+        std::cout << "I got vehicle info message!\n" ;
         receive_time_vehicle_info_ = msg->header.stamp;
         publish_vehicle_info(vcu_rx_.VEHICLE_INFO);
         break;
       case VEHICLE_STATUS_CANID:
+      std::cout << "I got vehicle status message!\n" ;
         receive_time_vehicle_signal_status_ = msg->header.stamp;
         publish_vehicle_status(vcu_rx_.VEHICLE_STATUS);
         break;

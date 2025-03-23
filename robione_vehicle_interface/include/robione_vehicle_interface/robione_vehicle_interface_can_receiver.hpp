@@ -121,8 +121,8 @@ private:
     hazard_lights_status_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
-  rclcpp::Publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>::SharedPtr
-    actuation_status_pub_;
+  // rclcpp::Publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>::SharedPtr
+  //   actuation_status_pub_;
   // Timer
   rclcpp::TimerBase::SharedPtr data_publish_timer_;
   // Timer callback
