@@ -78,9 +78,6 @@ void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
   steering_wheel_status_pub_->publish(
     AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(
       vcu_rx_.VEHICLE_INFO));
-
-  // actuation_status_pub_->publish(AutowareSocketcanBridge::convert_to_tier4_actuation_status(
-  //   vcu_rx_.VEHICLE_INFO, "base_link"));
 }
 
 void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
@@ -90,13 +87,11 @@ void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Fra
         msg->dlc)) {
     switch (msg->id) {
       case VEHICLE_INFO_CANID:
-        std::cout << "I got vehicle info message!\n" ;
         receive_time_vehicle_info_ = msg->header.stamp;
         publish_vehicle_info(vcu_rx_.VEHICLE_INFO);
         break;
       case VEHICLE_STATUS_CANID:
-      std::cout << "I got vehicle status message!\n" ;
-        receive_time_vehicle_signal_status_ = msg->header.stamp;
+        receive_time_vehicle_status_ = msg->header.stamp;
         publish_vehicle_status(vcu_rx_.VEHICLE_STATUS);
         break;
       default:
@@ -138,103 +133,25 @@ void RobioneVehicleInterfaceCanReceiver::publish_vehicle_status(
 void RobioneVehicleInterfaceCanReceiver::diagnostic_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  double time_since_last_control_mechanism_temps =
-    this->now().seconds() - receive_time_control_mechanism_temps_.seconds();
-  double time_since_last_control_mechanism_volts =
-    this->now().seconds() - receive_time_control_mechanism_volts_.seconds();
-  double time_since_last_dynamic_sensor_frame =
-    this->now().seconds() - receive_time_dynamic_sensor_frame_.seconds();
-  double time_since_last_motion_info = this->now().seconds() - receive_time_motion_info_.seconds();
-  double time_since_last_motor_info = this->now().seconds() - receive_time_motor_info_.seconds();
-  double time_since_last_throttle_module_status =
-    this->now().seconds() - receive_time_throttle_module_status_.seconds();
-  double time_since_last_vehicle_errors =
-    this->now().seconds() - receive_time_vehicle_errors_.seconds();
   double time_since_last_vehicle_info =
     this->now().seconds() - receive_time_vehicle_info_.seconds();
-  double time_since_last_vehicle_signal_status =
-    this->now().seconds() - receive_time_vehicle_signal_status_.seconds();
-  double time_since_last_wheel_speeds =
-    this->now().seconds() - receive_time_wheel_speeds_.seconds();
-
-  if (time_since_last_control_mechanism_temps > can_recv_timeout_threshold_) {
-    stat.add("Control Mechanism Temps", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Control Mechanism Temps timeout");
-  } else {
-    stat.add("Control Mechanism Temps", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Control Mechanism Temps OK");
-  }
-
-  if (time_since_last_control_mechanism_volts > can_recv_timeout_threshold_) {
-    stat.add("Control Mechanism Volts", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Control Mechanism Volts timeout");
-  } else {
-    stat.add("Control Mechanism Volts", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Control Mechanism Volts OK");
-  }
-
-  if (time_since_last_dynamic_sensor_frame > can_recv_timeout_threshold_) {
-    stat.add("Dynamic Sensor Frame", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Dynamic Sensor Frame timeout");
-  } else {
-    stat.add("Dynamic Sensor Frame", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Dynamic Sensor Frame OK");
-  }
-
-  if (time_since_last_motion_info > can_recv_timeout_threshold_) {
-    stat.add("Motion Info", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Motion Info timeout");
-  } else {
-    stat.add("Motion Info", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Motion Info OK");
-  }
-
-  if (time_since_last_motor_info > can_recv_timeout_threshold_) {
-    stat.add("Motor Info", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Motor Info timeout");
-  } else {
-    stat.add("Motor Info", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Motor Info OK");
-  }
-
-  if (time_since_last_throttle_module_status > can_recv_timeout_threshold_) {
-    stat.add("Throttle Module Status", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Throttle Module Status timeout");
-  } else {
-    stat.add("Throttle Module Status", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Throttle Module Status OK");
-  }
-
-  if (time_since_last_vehicle_errors > can_recv_timeout_threshold_) {
-    stat.add("Vehicle Errors", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Vehicle Errors timeout");
-  } else {
-    stat.add("Vehicle Errors", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Vehicle Errors OK");
-  }
+  double time_since_last_vehicle_status =
+    this->now().seconds() - receive_time_vehicle_status_.seconds();
 
   if (time_since_last_vehicle_info > can_recv_timeout_threshold_) {
-    stat.add("Vehicle Info", "No data received");
+    stat.add("Vehicle Info", "TIMEOUT");
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Vehicle Info timeout");
   } else {
     stat.add("Vehicle Info", "OK");
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Vehicle Info OK");
   }
 
-  if (time_since_last_vehicle_signal_status > can_recv_timeout_threshold_) {
-    stat.add("Vehicle Signal Status", "No data received");
+  if (time_since_last_vehicle_status > can_recv_timeout_threshold_) {
+    stat.add("Vehicle Status", "TIMEOUT");
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Vehicle Signal Status timeout");
   } else {
-    stat.add("Vehicle Signal Status", "OK");
+    stat.add("Vehicle Status", "OK");
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Vehicle Signal Status OK");
-  }
-
-  if (time_since_last_wheel_speeds > can_recv_timeout_threshold_) {
-    stat.add("Wheel Speeds", "No data received");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Wheel Speeds timeout");
-  } else {
-    stat.add("Wheel Speeds", "OK");
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Wheel Speeds OK");
   }
 }
 }  // namespace robione_vehicle_interface

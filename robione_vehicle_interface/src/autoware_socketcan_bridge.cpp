@@ -107,9 +107,7 @@ AutowareSocketcanBridge::convert_to_autoware_velocity_report(
   velocity_report_msg.header.frame_id = base_link;
   velocity_report_msg.header.stamp = rclcpp::Clock().now();
 
-  velocity_report_msg.longitudinal_velocity = gear_report.gear == gear_VEHICLE_STATUS_GEAR_R
-                                                ? -vehicle_info.vehicle_velocity_phys
-                                                : vehicle_info.vehicle_velocity_phys;
+  velocity_report_msg.longitudinal_velocity = vehicle_info.vehicle_velocity_phys;
 
   velocity_report_msg.longitudinal_velocity =
     velocity_report_msg.longitudinal_velocity * kph_to_mps;
@@ -224,6 +222,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
     vehicle_cmd_.set_autonomous = 0;
   }
 
+  vehicle_cmd_.blinker = blinker_VEHICLE_COMMANDS_NO_BLINKER;
   // Set Blinker
   if (
     turn_indicators_cmd.command ==

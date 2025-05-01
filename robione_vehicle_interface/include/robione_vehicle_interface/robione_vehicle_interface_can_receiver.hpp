@@ -92,17 +92,10 @@ private:
   void diagnostic_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
   // receive messages timestamp
-  rclcpp::Time receive_time_control_mechanism_temps_;
-  rclcpp::Time receive_time_control_mechanism_volts_;
-  rclcpp::Time receive_time_dynamic_sensor_frame_;
-  rclcpp::Time receive_time_motion_info_;
-  rclcpp::Time receive_time_motor_info_;
-  rclcpp::Time receive_time_throttle_module_status_;
+  
 
-  rclcpp::Time receive_time_vehicle_errors_;
   rclcpp::Time receive_time_vehicle_info_;
-  rclcpp::Time receive_time_vehicle_signal_status_;
-  rclcpp::Time receive_time_wheel_speeds_;
+  rclcpp::Time receive_time_vehicle_status_;
 
   // params
   double can_recv_timeout_threshold_;
