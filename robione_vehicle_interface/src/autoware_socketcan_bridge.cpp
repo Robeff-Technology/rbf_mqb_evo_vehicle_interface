@@ -109,8 +109,6 @@ AutowareSocketcanBridge::convert_to_autoware_velocity_report(
 
   velocity_report_msg.longitudinal_velocity = vehicle_info.vehicle_velocity_phys;
 
-  velocity_report_msg.longitudinal_velocity =
-    velocity_report_msg.longitudinal_velocity * kph_to_mps;
   return velocity_report_msg;
 }
 
