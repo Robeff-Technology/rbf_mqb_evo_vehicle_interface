@@ -100,7 +100,7 @@ AutowareSocketcanBridge::convert_to_autoware_turn_indicators_report(
 
 autoware_vehicle_msgs::msg::VelocityReport
 AutowareSocketcanBridge::convert_to_autoware_velocity_report(
-  const VEHICLE_INFO_t & vehicle_info, const VEHICLE_STATUS_t & gear_report,
+  const VEHICLE_INFO_t & vehicle_info,
   std::string base_link)
 {
   autoware_vehicle_msgs::msg::VelocityReport velocity_report_msg;
@@ -188,7 +188,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_vehicle_motion
     vehicle_motion_cmd_.set_front_wheel_angle_rate_phys = control_cmd.lateral.steering_tire_rotation_rate;
   }
 
-  frame.id = Pack_VEHICLE_MOTION_COMMANDS_VCU(&vehicle_motion_cmd_, frame.data.data(), &len, &ide);
+  frame.id = Pack_VEHICLE_MOTION_COMMANDS_vcu(&vehicle_motion_cmd_, frame.data.data(), &len, &ide);
   frame.is_extended = ide;
   frame.is_rtr = false;
   frame.dlc = len;
@@ -264,7 +264,23 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   // Set Horn
   vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_CLOSE;
 
-  frame.id = Pack_VEHICLE_COMMANDS_VCU(&vehicle_cmd_, frame.data.data(), &len, &ide);
+  frame.id = Pack_VEHICLE_COMMANDS_vcu(&vehicle_cmd_, frame.data.data(), &len, &ide);
+  frame.is_extended = ide;
+  frame.is_rtr = false;
+  frame.dlc = len;
+
+  return frame;
+}
+
+can_msgs::msg::Frame AutowareSocketcanBridge::convert_vehicle_interface_life_signal()
+{
+  uint8_t len, ide;
+  auto frame = can_msgs::msg::Frame();
+  frame.header.stamp = rclcpp::Clock().now();
+  VEHICLE_INTERFACE_LIFE_SIGNAL_t vehicle_interface_life_signal;
+  vehicle_interface_life_signal.life_signal = rclcpp::Clock().now().nanoseconds();
+
+  frame.id = Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(&vehicle_interface_life_signal, frame.data.data(), &len, &ide);
   frame.is_extended = ide;
   frame.is_rtr = false;
   frame.dlc = len;

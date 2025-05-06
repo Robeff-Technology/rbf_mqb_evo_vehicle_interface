@@ -12,7 +12,7 @@
 
   Note(!): bit-feild was not tested properly. */
 
- #define VCU_USE_BITS_SIGNAL 
+/* #define VCU_USE_BITS_SIGNAL */
 
 
 /* ------------------------------------------------------------------------- *

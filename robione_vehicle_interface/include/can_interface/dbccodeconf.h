@@ -2,7 +2,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdio.h>
 
 // when USE_SIGFLOAT enabed the sigfloat_t must be defined
 typedef float sigfloat_t;
@@ -29,3 +28,4 @@ typedef int32_t bitext_t;
 // frame's data field you have to define macro @GetFrameHash
 
 // #define GetFrameHash(a,b,c,d,e) __get_hash__(a,b,c,d,e)
+

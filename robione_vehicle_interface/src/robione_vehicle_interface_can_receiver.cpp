@@ -59,7 +59,7 @@ void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
     vcu_rx_.VEHICLE_STATUS));
 
   vehicle_twist_pub_->publish(AutowareSocketcanBridge::convert_to_autoware_velocity_report(
-    vcu_rx_.VEHICLE_INFO, vcu_rx_.VEHICLE_STATUS, base_frame_id_));
+    vcu_rx_.VEHICLE_INFO, base_frame_id_));
 
   steering_status_pub_->publish(
     AutowareSocketcanBridge::convert_to_autoware_steering_report(vcu_rx_.VEHICLE_INFO));

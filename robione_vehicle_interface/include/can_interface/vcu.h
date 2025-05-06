@@ -327,6 +327,33 @@ typedef struct
 
 } VEHICLE_STATUS_t;
 
+// def @VEHICLE_INTERFACE_LIFE_SIGNAL CAN Message (502203411 0x1def0413)
+#define VEHICLE_INTERFACE_LIFE_SIGNAL_IDE (1U)
+#define VEHICLE_INTERFACE_LIFE_SIGNAL_DLC (8U)
+#define VEHICLE_INTERFACE_LIFE_SIGNAL_CANID (0x1def0413U)
+
+typedef struct
+{
+#ifdef VCU_USE_BITS_SIGNAL
+
+  // -
+  uint64_t life_signal;                      //      Bits=64 Unit:'-'
+
+#else
+
+  // -
+  uint64_t life_signal;                      //      Bits=64 Unit:'-'
+
+#endif // VCU_USE_BITS_SIGNAL
+
+#ifdef VCU_USE_DIAG_MONITORS
+
+  FrameMonitor_t mon1;
+
+#endif // VCU_USE_DIAG_MONITORS
+
+} VEHICLE_INTERFACE_LIFE_SIGNAL_t;
+
 // def @VEHICLE_MOTION_COMMANDS CAN Message (502247424 0x1defb000)
 #define VEHICLE_MOTION_COMMANDS_IDE (1U)
 #define VEHICLE_MOTION_COMMANDS_DLC (8U)
@@ -626,32 +653,39 @@ typedef struct
 
 // Function signatures
 
-uint32_t Unpack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, const uint8_t* _d, uint8_t dlc_);
+uint32_t Unpack_VEHICLE_INFO_vcu(VEHICLE_INFO_t* _m, const uint8_t* _d, uint8_t dlc_);
 #ifdef VCU_USE_CANSTRUCT
-uint32_t Pack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, __CoderDbcCanFrame_t__* cframe);
+uint32_t Pack_VEHICLE_INFO_vcu(VEHICLE_INFO_t* _m, __CoderDbcCanFrame_t__* cframe);
 #else
-uint32_t Pack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
+uint32_t Pack_VEHICLE_INFO_vcu(VEHICLE_INFO_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
 #endif // VCU_USE_CANSTRUCT
 
-uint32_t Unpack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, const uint8_t* _d, uint8_t dlc_);
+uint32_t Unpack_VEHICLE_STATUS_vcu(VEHICLE_STATUS_t* _m, const uint8_t* _d, uint8_t dlc_);
 #ifdef VCU_USE_CANSTRUCT
-uint32_t Pack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe);
+uint32_t Pack_VEHICLE_STATUS_vcu(VEHICLE_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe);
 #else
-uint32_t Pack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
+uint32_t Pack_VEHICLE_STATUS_vcu(VEHICLE_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
 #endif // VCU_USE_CANSTRUCT
 
-uint32_t Unpack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_);
+uint32_t Unpack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(VEHICLE_INTERFACE_LIFE_SIGNAL_t* _m, const uint8_t* _d, uint8_t dlc_);
 #ifdef VCU_USE_CANSTRUCT
-uint32_t Pack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe);
+uint32_t Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(VEHICLE_INTERFACE_LIFE_SIGNAL_t* _m, __CoderDbcCanFrame_t__* cframe);
 #else
-uint32_t Pack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
+uint32_t Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(VEHICLE_INTERFACE_LIFE_SIGNAL_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
 #endif // VCU_USE_CANSTRUCT
 
-uint32_t Unpack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_);
+uint32_t Unpack_VEHICLE_MOTION_COMMANDS_vcu(VEHICLE_MOTION_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_);
 #ifdef VCU_USE_CANSTRUCT
-uint32_t Pack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe);
+uint32_t Pack_VEHICLE_MOTION_COMMANDS_vcu(VEHICLE_MOTION_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe);
 #else
-uint32_t Pack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
+uint32_t Pack_VEHICLE_MOTION_COMMANDS_vcu(VEHICLE_MOTION_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
+#endif // VCU_USE_CANSTRUCT
+
+uint32_t Unpack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_);
+#ifdef VCU_USE_CANSTRUCT
+uint32_t Pack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe);
+#else
+uint32_t Pack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
 #endif // VCU_USE_CANSTRUCT
 
 #ifdef __cplusplus

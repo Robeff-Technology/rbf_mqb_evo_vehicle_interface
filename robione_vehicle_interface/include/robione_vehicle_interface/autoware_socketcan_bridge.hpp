@@ -42,7 +42,7 @@ public:
   convert_to_autoware_turn_indicators_report(
     const VEHICLE_STATUS_t & turn_indicators_report);
   static autoware_vehicle_msgs::msg::VelocityReport convert_to_autoware_velocity_report(
-    const VEHICLE_INFO_t & velocity_report, const VEHICLE_STATUS_t & gear_report,
+    const VEHICLE_INFO_t & velocity_report,
     std::string base_link);
 
   static tier4_vehicle_msgs::msg::SteeringWheelStatusStamped convert_to_tier4_steering_wheel_status(
@@ -68,5 +68,7 @@ public:
 
   static robione_vehicle_interface_msgs::msg::VehicleMotionCommands convert_to_vehicle_motion_cmd();
   static robione_vehicle_interface_msgs::msg::VehicleCommands convert_to_vehicle_cmd();
+  static can_msgs::msg::Frame convert_vehicle_interface_life_signal();
+
 };
 }  // namespace robione_vehicle_interface

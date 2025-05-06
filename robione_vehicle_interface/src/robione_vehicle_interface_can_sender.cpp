@@ -76,6 +76,9 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
   rclcpp::Clock clock{RCL_ROS_TIME};
   bool is_all_received = true; // Flag to track if all messages are received
 
+  can_frame_pub_->publish(
+    AutowareSocketcanBridge::convert_vehicle_interface_life_signal());
+
   // Check if any of the subscribed messages are nullptr and log warnings
   if (control_cmd_ == nullptr) {
     RCLCPP_WARN_THROTTLE(get_logger(), clock, 1000,

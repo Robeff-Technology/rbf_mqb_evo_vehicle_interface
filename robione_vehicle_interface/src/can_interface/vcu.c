@@ -46,7 +46,7 @@ static bitext_t __ext_sig__(ubitext_t val, uint8_t bits)
   return ((val ^ m) - m);
 }
 
-uint32_t Unpack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, const uint8_t* _d, uint8_t dlc_)
+uint32_t Unpack_VEHICLE_INFO_vcu(VEHICLE_INFO_t* _m, const uint8_t* _d, uint8_t dlc_)
 {
   (void)dlc_;
   _m->vehicle_velocity_ro = (int16_t) __ext_sig__(( ((_d[1] & (0xFFU)) << 8U) | (_d[0] & (0xFFU)) ), 16);
@@ -83,7 +83,7 @@ uint32_t Unpack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, const uint8_t* _d, uint8_t 
 
 #ifdef VCU_USE_CANSTRUCT
 
-uint32_t Pack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, __CoderDbcCanFrame_t__* cframe)
+uint32_t Pack_VEHICLE_INFO_vcu(VEHICLE_INFO_t* _m, __CoderDbcCanFrame_t__* cframe)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_INFO_DLC); cframe->Data[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -111,7 +111,7 @@ uint32_t Pack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, __CoderDbcCanFrame_t__* cfram
 
 #else
 
-uint32_t Pack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
+uint32_t Pack_VEHICLE_INFO_vcu(VEHICLE_INFO_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_INFO_DLC); _d[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -138,7 +138,7 @@ uint32_t Pack_VEHICLE_INFO_VCU(VEHICLE_INFO_t* _m, uint8_t* _d, uint8_t* _len, u
 
 #endif // VCU_USE_CANSTRUCT
 
-uint32_t Unpack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, const uint8_t* _d, uint8_t dlc_)
+uint32_t Unpack_VEHICLE_STATUS_vcu(VEHICLE_STATUS_t* _m, const uint8_t* _d, uint8_t dlc_)
 {
   (void)dlc_;
   _m->battery_voltage = (uint8_t) ( (_d[0] & (0xFFU)) );
@@ -162,7 +162,7 @@ uint32_t Unpack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, const uint8_t* _d, uint
 
 #ifdef VCU_USE_CANSTRUCT
 
-uint32_t Pack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe)
+uint32_t Pack_VEHICLE_STATUS_vcu(VEHICLE_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_STATUS_DLC); cframe->Data[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -182,7 +182,7 @@ uint32_t Pack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, __CoderDbcCanFrame_t__* c
 
 #else
 
-uint32_t Pack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
+uint32_t Pack_VEHICLE_STATUS_vcu(VEHICLE_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_STATUS_DLC); _d[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -201,7 +201,66 @@ uint32_t Pack_VEHICLE_STATUS_VCU(VEHICLE_STATUS_t* _m, uint8_t* _d, uint8_t* _le
 
 #endif // VCU_USE_CANSTRUCT
 
-uint32_t Unpack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_)
+uint32_t Unpack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(VEHICLE_INTERFACE_LIFE_SIGNAL_t* _m, const uint8_t* _d, uint8_t dlc_)
+{
+  (void)dlc_;
+  _m->life_signal = (uint64_t) ( ((uint64_t)(_d[7] & (0xFFU)) << 56U) | ((uint64_t)(_d[6] & (0xFFU)) << 48U) | ((uint64_t)(_d[5] & (0xFFU)) << 40U) | ((uint64_t)(_d[4] & (0xFFU)) << 32U) | ((_d[3] & (0xFFU)) << 24U) | ((_d[2] & (0xFFU)) << 16U) | ((_d[1] & (0xFFU)) << 8U) | (_d[0] & (0xFFU)) );
+
+#ifdef VCU_USE_DIAG_MONITORS
+  _m->mon1.dlc_error = (dlc_ < VEHICLE_INTERFACE_LIFE_SIGNAL_DLC);
+  _m->mon1.last_cycle = GetSystemTick();
+  _m->mon1.frame_cnt++;
+
+  FMon_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(&_m->mon1, VEHICLE_INTERFACE_LIFE_SIGNAL_CANID);
+#endif // VCU_USE_DIAG_MONITORS
+
+  return VEHICLE_INTERFACE_LIFE_SIGNAL_CANID;
+}
+
+#ifdef VCU_USE_CANSTRUCT
+
+uint32_t Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(VEHICLE_INTERFACE_LIFE_SIGNAL_t* _m, __CoderDbcCanFrame_t__* cframe)
+{
+  uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_INTERFACE_LIFE_SIGNAL_DLC); cframe->Data[i++] = VCU_INITIAL_BYTE_VALUE);
+
+  cframe->Data[0] |= (uint8_t) ( (_m->life_signal & (0xFFU)) );
+  cframe->Data[1] |= (uint8_t) ( ((_m->life_signal >> 8U) & (0xFFU)) );
+  cframe->Data[2] |= (uint8_t) ( ((_m->life_signal >> 16U) & (0xFFU)) );
+  cframe->Data[3] |= (uint8_t) ( ((_m->life_signal >> 24U) & (0xFFU)) );
+  cframe->Data[4] |= (uint8_t) ( ((_m->life_signal >> 32U) & (0xFFU)) );
+  cframe->Data[5] |= (uint8_t) ( ((_m->life_signal >> 40U) & (0xFFU)) );
+  cframe->Data[6] |= (uint8_t) ( ((_m->life_signal >> 48U) & (0xFFU)) );
+  cframe->Data[7] |= (uint8_t) ( ((_m->life_signal >> 56U) & (0xFFU)) );
+
+  cframe->MsgId = (uint32_t) VEHICLE_INTERFACE_LIFE_SIGNAL_CANID;
+  cframe->DLC = (uint8_t) VEHICLE_INTERFACE_LIFE_SIGNAL_DLC;
+  cframe->IDE = (uint8_t) VEHICLE_INTERFACE_LIFE_SIGNAL_IDE;
+  return VEHICLE_INTERFACE_LIFE_SIGNAL_CANID;
+}
+
+#else
+
+uint32_t Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(VEHICLE_INTERFACE_LIFE_SIGNAL_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
+{
+  uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_INTERFACE_LIFE_SIGNAL_DLC); _d[i++] = VCU_INITIAL_BYTE_VALUE);
+
+  _d[0] |= (uint8_t) ( (_m->life_signal & (0xFFU)) );
+  _d[1] |= (uint8_t) ( ((_m->life_signal >> 8U) & (0xFFU)) );
+  _d[2] |= (uint8_t) ( ((_m->life_signal >> 16U) & (0xFFU)) );
+  _d[3] |= (uint8_t) ( ((_m->life_signal >> 24U) & (0xFFU)) );
+  _d[4] |= (uint8_t) ( ((_m->life_signal >> 32U) & (0xFFU)) );
+  _d[5] |= (uint8_t) ( ((_m->life_signal >> 40U) & (0xFFU)) );
+  _d[6] |= (uint8_t) ( ((_m->life_signal >> 48U) & (0xFFU)) );
+  _d[7] |= (uint8_t) ( ((_m->life_signal >> 56U) & (0xFFU)) );
+
+  *_len = (uint8_t) VEHICLE_INTERFACE_LIFE_SIGNAL_DLC;
+  *_ide = (uint8_t) VEHICLE_INTERFACE_LIFE_SIGNAL_IDE;
+  return VEHICLE_INTERFACE_LIFE_SIGNAL_CANID;
+}
+
+#endif // VCU_USE_CANSTRUCT
+
+uint32_t Unpack_VEHICLE_MOTION_COMMANDS_vcu(VEHICLE_MOTION_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_)
 {
   (void)dlc_;
   _m->set_velocity_ro = (int16_t) __ext_sig__(( ((_d[1] & (0xFFU)) << 8U) | (_d[0] & (0xFFU)) ), 16);
@@ -237,7 +296,7 @@ uint32_t Unpack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, const
 
 #ifdef VCU_USE_CANSTRUCT
 
-uint32_t Pack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe)
+uint32_t Pack_VEHICLE_MOTION_COMMANDS_vcu(VEHICLE_MOTION_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_MOTION_COMMANDS_DLC); cframe->Data[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -265,7 +324,7 @@ uint32_t Pack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, __Coder
 
 #else
 
-uint32_t Pack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
+uint32_t Pack_VEHICLE_MOTION_COMMANDS_vcu(VEHICLE_MOTION_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_MOTION_COMMANDS_DLC); _d[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -292,7 +351,7 @@ uint32_t Pack_VEHICLE_MOTION_COMMANDS_VCU(VEHICLE_MOTION_COMMANDS_t* _m, uint8_t
 
 #endif // VCU_USE_CANSTRUCT
 
-uint32_t Unpack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_)
+uint32_t Unpack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, const uint8_t* _d, uint8_t dlc_)
 {
   (void)dlc_;
   _m->set_autonomous = (uint8_t) ( (_d[0] & (0x01U)) );
@@ -317,7 +376,7 @@ uint32_t Unpack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, const uint8_t* _d, 
 
 #ifdef VCU_USE_CANSTRUCT
 
-uint32_t Pack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe)
+uint32_t Pack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, __CoderDbcCanFrame_t__* cframe)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_COMMANDS_DLC); cframe->Data[i++] = VCU_INITIAL_BYTE_VALUE);
 
@@ -338,7 +397,7 @@ uint32_t Pack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, __CoderDbcCanFrame_t_
 
 #else
 
-uint32_t Pack_VEHICLE_COMMANDS_VCU(VEHICLE_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
+uint32_t Pack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
 {
   uint8_t i; for (i = 0u; i < VCU_VALIDATE_DLC(VEHICLE_COMMANDS_DLC); _d[i++] = VCU_INITIAL_BYTE_VALUE);
 
