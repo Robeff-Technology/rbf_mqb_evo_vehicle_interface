@@ -1,6 +1,7 @@
 #include "robione_vehicle_interface/robione_vehicle_interface_can_sender.hpp"
 
 #include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
+#include <cstdlib>
 namespace robione_vehicle_interface {
 RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
     const rclcpp::NodeOptions &options)
@@ -15,6 +16,9 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
   diag_updater_.setHardwareID("robione_vehicle_interface_can_sender");
   diag_updater_.add("CAN Status", this,
                     &RobioneVehicleInterfaceCanSender::diagnostic_callback);
+
+  std::system("sudo ip link set can0 down");
+  std::system("sudo ip link set can0 up type can bitrate 250000");
 
   // publishers
   vehicle_motion_cmd_pub_ = create_publisher<
