@@ -80,6 +80,7 @@ void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
       vcu_rx_.VEHICLE_INFO));
 }
 
+
 void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
   if (vcu_Receive(
@@ -98,6 +99,12 @@ void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Fra
         break;
     }
   }
+
+  if(msg->id == 0xA0002DBU) {
+    system("pkill -f /robione_vehicle_interface_sender");
+    rclcpp::shutdown();
+  }
+
 
 }
 
