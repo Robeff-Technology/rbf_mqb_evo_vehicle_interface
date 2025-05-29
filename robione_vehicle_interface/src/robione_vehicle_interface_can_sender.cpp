@@ -17,9 +17,6 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
   diag_updater_.add("CAN Status", this,
                     &RobioneVehicleInterfaceCanSender::diagnostic_callback);
 
-  std::system("sudo ip link set can0 down");
-  std::system("sudo ip link set can0 up type can bitrate 250000");
-
   // publishers
   vehicle_motion_cmd_pub_ = create_publisher<
       robione_vehicle_interface_msgs::msg::VehicleMotionCommands>(
