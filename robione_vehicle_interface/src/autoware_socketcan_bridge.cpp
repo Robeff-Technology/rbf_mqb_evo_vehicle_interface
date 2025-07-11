@@ -237,6 +237,9 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   // Set Headlight
   vehicle_cmd_.headlight = headlight_VEHICLE_COMMANDS_HEADLIGHT_CLOSE;
 
+  // Set Handbrake
+  vehicle_cmd_.hand_brake = hand_brake_VEHICLE_COMMANDS_HANDBRAKE_RELEASE;
+
   // Set Gear
   switch (gear_cmd.command) {
     case autoware_vehicle_msgs::msg::GearCommand::DRIVE:
@@ -247,16 +250,17 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
       break;
     case autoware_vehicle_msgs::msg::GearCommand::PARK:
       vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_GEAR_P;
+      vehicle_cmd_.hand_brake = hand_brake_VEHICLE_COMMANDS_HANDBRAKE_PRESS;
       break;
     case autoware_vehicle_msgs::msg::GearCommand::NEUTRAL:
       vehicle_cmd_.gear = gear_VEHICLE_COMMANDS_GEAR_N;
+      vehicle_cmd_.hand_brake = hand_brake_VEHICLE_COMMANDS_HANDBRAKE_PRESS;
       break;
     default:
       break;
   }
+  
 
-  // Set Handbrake
-  vehicle_cmd_.hand_brake = hand_brake_VEHICLE_COMMANDS_HANDBRAKE_RELEASE;
 
   // Set Emergency Request
   vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency;
