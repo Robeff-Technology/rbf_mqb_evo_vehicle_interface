@@ -209,16 +209,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   auto frame = can_msgs::msg::Frame();
   frame.header.stamp = rclcpp::Clock().now();
 
-  // Set Autonomous Mode
-  if (engage_cmd.engage) {
-    if (gate_mode_cmd.data == tier4_control_msgs::msg::GateMode::AUTO) {
-      vehicle_cmd_.set_autonomous = 1;
-    } else {
-      vehicle_cmd_.set_autonomous = 0;
-    }
-  } else {
-    vehicle_cmd_.set_autonomous = 0;
-  }
+  vehicle_cmd_.set_autonomous = 1;
 
   vehicle_cmd_.blinker = blinker_VEHICLE_COMMANDS_NO_BLINKER;
   // Set Blinker
