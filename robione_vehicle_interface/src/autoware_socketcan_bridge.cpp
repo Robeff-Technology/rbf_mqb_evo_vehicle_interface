@@ -211,7 +211,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   frame.header.stamp = rclcpp::Clock().now();
 
   vehicle_cmd_.set_autonomous = 1;
-
+  vehicle_cmd_.horn = horn_activate;
   vehicle_cmd_.blinker = blinker_VEHICLE_COMMANDS_NO_BLINKER;
   // Set Blinker
   if (
