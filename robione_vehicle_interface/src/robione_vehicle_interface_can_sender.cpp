@@ -63,8 +63,12 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
               this, std::placeholders::_1));
 
   sub_route_state_ = this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
-      "/api/routing/state",rclcpp::QoS{10},
-      std::bind(&RobioneVehicleInterfaceCanSender::route_state_callback,this,std::placeholders::_1));
+    "/api/routing/state",
+    rclcpp::QoS(rclcpp::KeepLast(1))
+      .reliable()
+      .transient_local(),
+    std::bind(&RobioneVehicleInterfaceCanSender::route_state_callback, this, std::placeholders::_1)
+  );
 
   // publishers
   can_frame_pub_ =
