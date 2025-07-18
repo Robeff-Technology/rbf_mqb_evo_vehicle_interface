@@ -203,7 +203,8 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
   tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
   tier4_control_msgs::msg::GateMode & gate_mode_cmd,
-  autoware_vehicle_msgs::msg::Engage & engage_cmd)
+  autoware_vehicle_msgs::msg::Engage & engage_cmd,
+  bool horn_activate)
 {
   uint8_t len, ide;
   auto frame = can_msgs::msg::Frame();

@@ -62,6 +62,10 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
               &RobioneVehicleInterfaceCanSender::vehicle_emergency_cmd_callback,
               this, std::placeholders::_1));
 
+  sub_route_state_ = this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
+      "/api/routing/state",rclcpp::QoS{10},
+      std::bind(&RobioneVehicleInterfaceCanSender::route_state_callback,this,std::placeholders::_1));
+
   // publishers
   can_frame_pub_ =
       create_publisher<can_msgs::msg::Frame>("to_can_bus", rclcpp::QoS(500));
@@ -76,6 +80,7 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
 void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
   rclcpp::Clock clock{RCL_ROS_TIME};
   bool is_all_received = true; // Flag to track if all messages are received
+  bool triggered_horn = false;
 
   can_frame_pub_->publish(
     AutowareSocketcanBridge::convert_vehicle_interface_life_signal());
@@ -122,6 +127,11 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
     is_all_received = false;
   }
 
+
+  if(is_arrived_triggered && ((rclcpp::Clock().now() - arrived_timer_).seconds() < 10)) {
+    triggered_horn = true;
+  }
+
   // If all the required commands are received, publish the CAN messages
   if (is_all_received && !is_control_cmd_timeout_) {
     // Publish the CAN messages
@@ -132,7 +142,7 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
     can_frame_pub_->publish(
         AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
             *gear_cmd_, *turn_indicators_cmd_, *hazard_lights_cmd_,
-            *vehicle_emergency_cmd_, *gate_mode_cmd_, *engage_cmd_));
+            *vehicle_emergency_cmd_, *gate_mode_cmd_, *engage_cmd_, triggered_horn));
 
     // ROS2 Debug Messages
     vehicle_motion_cmd_pub_->publish(
@@ -192,6 +202,17 @@ void RobioneVehicleInterfaceCanSender::diagnostic_callback(
   } else {
     stat.add("Control Command", "Not Received");
   }
+}
+
+void RobioneVehicleInterfaceCanSender::route_state_callback(const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg) {
+	route_state_ptr_ = msg;
+    if(route_state_ptr_->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED){
+        arrived_timer_ = rclcpp::Clock().now();
+        is_arrived_triggered = true;
+    }
+    else {
+      is_arrived_triggered = false;
+    }
 }
 
 } // namespace robione_vehicle_interface

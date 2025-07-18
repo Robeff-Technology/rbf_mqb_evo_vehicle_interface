@@ -4,6 +4,7 @@
 
 #include "can_msgs/msg/frame.hpp"
 #include <autoware_adapi_v1_msgs/msg/operation_mode_state.hpp>
+#include <autoware_adapi_v1_msgs/msg/route_state.hpp>
 #include <autoware_control_msgs/msg/control.hpp>
 #include <autoware_system_msgs/msg/autoware_state.hpp>
 #include <autoware_vehicle_msgs/msg/engage.hpp>
@@ -63,6 +64,7 @@ private:
       gate_mode_cmd_sub_;
   rclcpp::Subscription<tier4_vehicle_msgs::msg::VehicleEmergencyStamped>::
       SharedPtr vehicle_emergency_cmd_sub_;
+  rclcpp::Subscription<autoware_adapi_v1_msgs::msg::RouteState>::SharedPtr sub_route_state_;   
 
   // Callbacks
   void control_cmd_callback(
@@ -79,6 +81,8 @@ private:
       const tier4_control_msgs::msg::GateMode::SharedPtr msg);
   void vehicle_emergency_cmd_callback(
       const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg);
+  void route_state_callback(
+      const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg);
 
   // Received pointers
   autoware_control_msgs::msg::Control::SharedPtr control_cmd_{nullptr};
@@ -91,6 +95,8 @@ private:
   tier4_control_msgs::msg::GateMode::SharedPtr gate_mode_cmd_{nullptr};
   tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr
       vehicle_emergency_cmd_{nullptr};
+  autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr route_state_ptr_{
+      nullptr};
 
   // Timer for can frame publishing
   rclcpp::TimerBase::SharedPtr data_publish_can_timer_;
@@ -100,6 +106,8 @@ private:
 
   // Timeout checkers
   rclcpp::Time control_cmd_timeout_;
+  rclcpp::Time arrived_timer_;
   bool is_control_cmd_timeout_ = false;
+  bool is_arrived_triggered = false;
 };
 } // namespace robione_vehicle_interface
