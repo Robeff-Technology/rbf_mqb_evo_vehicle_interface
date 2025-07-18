@@ -132,7 +132,7 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
   }
 
 
-  if(is_arrived_triggered && ((rclcpp::Clock().now() - arrived_timer_).seconds() < 10)) {
+  if(is_arrived_triggered && ((rclcpp::Clock().now() - arrived_timer_).seconds() < 6)) {
     triggered_horn = true;
   }
 

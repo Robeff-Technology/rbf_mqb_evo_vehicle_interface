@@ -211,7 +211,6 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   frame.header.stamp = rclcpp::Clock().now();
 
   vehicle_cmd_.set_autonomous = 1;
-  vehicle_cmd_.horn = horn_activate;
   vehicle_cmd_.blinker = blinker_VEHICLE_COMMANDS_NO_BLINKER;
   // Set Blinker
   if (
@@ -258,8 +257,11 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency;
 
   // Set Horn
-  vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_CLOSE;
-
+  if(horn_activate) {
+    vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_OPEN;
+  } else {
+    vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_CLOSE;
+  }
   frame.id = Pack_VEHICLE_COMMANDS_vcu(&vehicle_cmd_, frame.data.data(), &len, &ide);
   frame.is_extended = ide;
   frame.is_rtr = false;
