@@ -594,7 +594,10 @@ typedef struct
   uint8_t horn : 1;                          //      Bits= 1 Unit:'-'
 
   // -
-  uint32_t reserved;                         //      Bits=23 Unit:'-'
+  uint8_t safety_inactive : 1;               //      Bits= 1 Unit:'-'
+
+  // -
+  uint32_t reserved;                         //      Bits=22 Unit:'-'
 
 #else
 
@@ -639,7 +642,10 @@ typedef struct
   uint8_t horn;                              //      Bits= 1 Unit:'-'
 
   // -
-  uint32_t reserved;                         //      Bits=23 Unit:'-'
+  uint8_t safety_inactive;                   //      Bits= 1 Unit:'-'
+
+  // -
+  uint32_t reserved;                         //      Bits=22 Unit:'-'
 
 #endif // VCU_USE_BITS_SIGNAL
 

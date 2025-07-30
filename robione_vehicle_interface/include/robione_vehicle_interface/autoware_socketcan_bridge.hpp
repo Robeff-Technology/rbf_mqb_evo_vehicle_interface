@@ -59,13 +59,12 @@ public:
     const autoware_control_msgs::msg::Control & control_cmd, float velocity_limit);
 
   static can_msgs::msg::Frame convert_autoware_vehicle_cmd(
-    autoware_vehicle_msgs::msg::GearCommand & gear_cmd,
-    autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
-    autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
-    tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
-    tier4_control_msgs::msg::GateMode & operation_mode_state,
-    autoware_vehicle_msgs::msg::Engage & engage_cmd,
-    bool horn_activate);
+  autoware_vehicle_msgs::msg::GearCommand & gear_cmd,
+  autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
+  autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
+  tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
+  bool is_restricted_area,
+  bool horn_activate);
 
   static robione_vehicle_interface_msgs::msg::VehicleMotionCommands convert_to_vehicle_motion_cmd();
   static robione_vehicle_interface_msgs::msg::VehicleCommands convert_to_vehicle_cmd();

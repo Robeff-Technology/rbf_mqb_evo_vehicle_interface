@@ -361,7 +361,8 @@ uint32_t Unpack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, const uint8_t* _d, 
   _m->hand_brake = (uint8_t) ( (_d[3] & (0xFFU)) );
   _m->emergency_request = (uint8_t) ( (_d[4] & (0xFFU)) );
   _m->horn = (uint8_t) ( (_d[5] & (0x01U)) );
-  _m->reserved = (uint32_t) ( ((_d[7] & (0xFFU)) << 15U) | ((_d[6] & (0xFFU)) << 7U) | ((_d[5] >> 1U) & (0x7FU)) );
+  _m->safety_inactive = (uint8_t) ( ((_d[5] >> 1U) & (0x01U)) );
+  _m->reserved = (uint32_t) ( ((_d[7] & (0xFFU)) << 14U) | ((_d[6] & (0xFFU)) << 6U) | ((_d[5] >> 2U) & (0x3FU)) );
 
 #ifdef VCU_USE_DIAG_MONITORS
   _m->mon1.dlc_error = (dlc_ < VEHICLE_COMMANDS_DLC);
@@ -385,9 +386,9 @@ uint32_t Pack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, __CoderDbcCanFrame_t_
   cframe->Data[2] |= (uint8_t) ( (_m->gear & (0xFFU)) );
   cframe->Data[3] |= (uint8_t) ( (_m->hand_brake & (0xFFU)) );
   cframe->Data[4] |= (uint8_t) ( (_m->emergency_request & (0xFFU)) );
-  cframe->Data[5] |= (uint8_t) ( (_m->horn & (0x01U)) | ((_m->reserved & (0x7FU)) << 1U) );
-  cframe->Data[6] |= (uint8_t) ( ((_m->reserved >> 7U) & (0xFFU)) );
-  cframe->Data[7] |= (uint8_t) ( ((_m->reserved >> 15U) & (0xFFU)) );
+  cframe->Data[5] |= (uint8_t) ( (_m->horn & (0x01U)) | ((_m->safety_inactive & (0x01U)) << 1U) | ((_m->reserved & (0x3FU)) << 2U) );
+  cframe->Data[6] |= (uint8_t) ( ((_m->reserved >> 6U) & (0xFFU)) );
+  cframe->Data[7] |= (uint8_t) ( ((_m->reserved >> 14U) & (0xFFU)) );
 
   cframe->MsgId = (uint32_t) VEHICLE_COMMANDS_CANID;
   cframe->DLC = (uint8_t) VEHICLE_COMMANDS_DLC;
@@ -406,9 +407,9 @@ uint32_t Pack_VEHICLE_COMMANDS_vcu(VEHICLE_COMMANDS_t* _m, uint8_t* _d, uint8_t*
   _d[2] |= (uint8_t) ( (_m->gear & (0xFFU)) );
   _d[3] |= (uint8_t) ( (_m->hand_brake & (0xFFU)) );
   _d[4] |= (uint8_t) ( (_m->emergency_request & (0xFFU)) );
-  _d[5] |= (uint8_t) ( (_m->horn & (0x01U)) | ((_m->reserved & (0x7FU)) << 1U) );
-  _d[6] |= (uint8_t) ( ((_m->reserved >> 7U) & (0xFFU)) );
-  _d[7] |= (uint8_t) ( ((_m->reserved >> 15U) & (0xFFU)) );
+  _d[5] |= (uint8_t) ( (_m->horn & (0x01U)) | ((_m->safety_inactive & (0x01U)) << 1U) | ((_m->reserved & (0x3FU)) << 2U) );
+  _d[6] |= (uint8_t) ( ((_m->reserved >> 6U) & (0xFFU)) );
+  _d[7] |= (uint8_t) ( ((_m->reserved >> 14U) & (0xFFU)) );
 
   *_len = (uint8_t) VEHICLE_COMMANDS_DLC;
   *_ide = (uint8_t) VEHICLE_COMMANDS_IDE;

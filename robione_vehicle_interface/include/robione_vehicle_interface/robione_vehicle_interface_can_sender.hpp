@@ -12,6 +12,8 @@
 #include <autoware_vehicle_msgs/msg/hazard_lights_command.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_command.hpp>
 #include <autoware_vehicle_msgs/srv/control_mode_command.hpp>
+#include <robeff_msgs/msg/gui_to_drc.hpp>
+#include <robeff_msgs/msg/sick_zone.hpp>
 #include <robione_vehicle_interface_msgs/msg/vehicle_commands.hpp>
 #include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
@@ -49,6 +51,10 @@ private:
   // subscriptions
   rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_frame_pub_;
 
+  // robeff_msgs subscription
+  rclcpp::Subscription<robeff_msgs::msg::GuiToDrc>::SharedPtr gui_to_drc_sub_;
+  rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr sick_zone_sub_;
+
   // From Autoware
   rclcpp::Subscription<autoware_control_msgs::msg::Control>::SharedPtr
       control_cmd_sub_;
@@ -64,7 +70,8 @@ private:
       gate_mode_cmd_sub_;
   rclcpp::Subscription<tier4_vehicle_msgs::msg::VehicleEmergencyStamped>::
       SharedPtr vehicle_emergency_cmd_sub_;
-  rclcpp::Subscription<autoware_adapi_v1_msgs::msg::RouteState>::SharedPtr sub_route_state_;   
+  rclcpp::Subscription<autoware_adapi_v1_msgs::msg::RouteState>::SharedPtr
+      sub_route_state_;
 
   // Callbacks
   void control_cmd_callback(
@@ -83,6 +90,10 @@ private:
       const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg);
   void route_state_callback(
       const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg);
+  void
+  gui_to_drc_callback(const robeff_msgs::msg::GuiToDrc::ConstSharedPtr msg);
+  void
+  sick_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
 
   // Received pointers
   autoware_control_msgs::msg::Control::SharedPtr control_cmd_{nullptr};
@@ -97,7 +108,6 @@ private:
       vehicle_emergency_cmd_{nullptr};
   autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr route_state_ptr_{
       nullptr};
-
   // Timer for can frame publishing
   rclcpp::TimerBase::SharedPtr data_publish_can_timer_;
 
@@ -109,5 +119,6 @@ private:
   rclcpp::Time arrived_timer_;
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered = false;
+  bool is_restricted_area_detect = false;
 };
 } // namespace robione_vehicle_interface

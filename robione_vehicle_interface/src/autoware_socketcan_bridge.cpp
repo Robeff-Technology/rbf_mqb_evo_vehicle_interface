@@ -202,8 +202,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
   autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
   tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
-  tier4_control_msgs::msg::GateMode & gate_mode_cmd,
-  autoware_vehicle_msgs::msg::Engage & engage_cmd,
+  bool is_restricted_area,
   bool horn_activate)
 {
   uint8_t len, ide;
@@ -261,6 +260,13 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
     vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_OPEN;
   } else {
     vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_CLOSE;
+  }
+
+  if(is_restricted_area) {
+    vehicle_cmd_.safety_inactive = 1;
+  }
+  else {
+    vehicle_cmd_.safety_inactive = 0;
   }
   frame.id = Pack_VEHICLE_COMMANDS_vcu(&vehicle_cmd_, frame.data.data(), &len, &ide);
   frame.is_extended = ide;

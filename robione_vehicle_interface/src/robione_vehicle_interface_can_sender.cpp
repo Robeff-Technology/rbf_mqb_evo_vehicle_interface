@@ -1,5 +1,4 @@
 #include "robione_vehicle_interface/robione_vehicle_interface_can_sender.hpp"
-
 #include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
 #include <cstdlib>
 namespace robione_vehicle_interface {
@@ -54,21 +53,27 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
       "/control/current_gate_mode", rclcpp::QoS(1),
       std::bind(&RobioneVehicleInterfaceCanSender::gate_mode_cmd_callback, this,
                 std::placeholders::_1));
-
   vehicle_emergency_cmd_sub_ =
       create_subscription<tier4_vehicle_msgs::msg::VehicleEmergencyStamped>(
           "/control/command/emergency_cmd", rclcpp::QoS(1),
           std::bind(
               &RobioneVehicleInterfaceCanSender::vehicle_emergency_cmd_callback,
               this, std::placeholders::_1));
+  sub_route_state_ =
+      this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
+          "/api/routing/state",
+          rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local(),
+          std::bind(&RobioneVehicleInterfaceCanSender::route_state_callback,
+                    this, std::placeholders::_1));
+  gui_to_drc_sub_ = this->create_subscription<robeff_msgs::msg::GuiToDrc>(
+      "/interface/gui_to_drc", rclcpp::QoS{1},
+      std::bind(&RobioneVehicleInterfaceCanSender::gui_to_drc_callback, this,
+                std::placeholders::_1));
 
-  sub_route_state_ = this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
-    "/api/routing/state",
-    rclcpp::QoS(rclcpp::KeepLast(1))
-      .reliable()
-      .transient_local(),
-    std::bind(&RobioneVehicleInterfaceCanSender::route_state_callback, this, std::placeholders::_1)
-  );
+  sick_zone_sub_ = this->create_subscription<robeff_msgs::msg::SickZone>(
+      "/interface/gui_to_drc", rclcpp::QoS(1).transient_local().reliable(),
+      std::bind(&RobioneVehicleInterfaceCanSender::sick_zone_callback, this,
+                std::placeholders::_1));
 
   // publishers
   can_frame_pub_ =
@@ -87,7 +92,7 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
   bool triggered_horn = false;
 
   can_frame_pub_->publish(
-    AutowareSocketcanBridge::convert_vehicle_interface_life_signal());
+      AutowareSocketcanBridge::convert_vehicle_interface_life_signal());
 
   // Check if any of the subscribed messages are nullptr and log warnings
   if (control_cmd_ == nullptr) {
@@ -131,8 +136,8 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
     is_all_received = false;
   }
 
-
-  if(is_arrived_triggered && ((rclcpp::Clock().now() - arrived_timer_).seconds() < 6)) {
+  if (is_arrived_triggered &&
+      ((rclcpp::Clock().now() - arrived_timer_).seconds() < 10)) {
     triggered_horn = true;
   }
 
@@ -146,7 +151,8 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
     can_frame_pub_->publish(
         AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
             *gear_cmd_, *turn_indicators_cmd_, *hazard_lights_cmd_,
-            *vehicle_emergency_cmd_, *gate_mode_cmd_, *engage_cmd_, triggered_horn));
+            *vehicle_emergency_cmd_, triggered_horn,
+            is_restricted_area_detect));
 
     // ROS2 Debug Messages
     vehicle_motion_cmd_pub_->publish(
@@ -208,15 +214,33 @@ void RobioneVehicleInterfaceCanSender::diagnostic_callback(
   }
 }
 
-void RobioneVehicleInterfaceCanSender::route_state_callback(const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg) {
-	route_state_ptr_ = msg;
-    if(route_state_ptr_->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED){
-        arrived_timer_ = rclcpp::Clock().now();
-        is_arrived_triggered = true;
-    }
-    else {
-      is_arrived_triggered = false;
-    }
+void RobioneVehicleInterfaceCanSender::route_state_callback(
+    const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg) {
+  route_state_ptr_ = msg;
+  if (route_state_ptr_->state ==
+      autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
+    arrived_timer_ = rclcpp::Clock().now();
+    is_arrived_triggered = true;
+  } else {
+    is_arrived_triggered = false;
+  }
+}
+
+void RobioneVehicleInterfaceCanSender::gui_to_drc_callback(
+    const robeff_msgs::msg::GuiToDrc::ConstSharedPtr msg) {
+  if (msg->data_id == 7) {
+    is_arrived_triggered = false;
+  }
+}
+
+void RobioneVehicleInterfaceCanSender::sick_zone_callback(
+    const robeff_msgs::msg::SickZone::ConstSharedPtr msg) {
+      if(msg->state == robeff_msgs::msg::SickZone::DEACTIVATE) {
+        is_restricted_area_detect = true;
+      }
+      else {
+        is_restricted_area_detect = false;
+      }
 }
 
 } // namespace robione_vehicle_interface

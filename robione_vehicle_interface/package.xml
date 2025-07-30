@@ -25,6 +25,7 @@
   <depend>can_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>robione_vehicle_interface_msgs</depend>
+  <depend>robeff_msgs</depend>
   
 
   <test_depend>ament_lint_auto</test_depend>
