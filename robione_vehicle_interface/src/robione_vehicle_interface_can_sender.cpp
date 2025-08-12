@@ -63,7 +63,7 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
                 std::placeholders::_1));
 
   sick_zone_sub_ = this->create_subscription<robeff_msgs::msg::SickZone>(
-      "/interface/gui_to_drc", rclcpp::QoS(1).transient_local().reliable(),
+      "/api/sick/zone", rclcpp::QoS(1).transient_local().reliable(),
       std::bind(&RobioneVehicleInterfaceCanSender::sick_zone_callback, this,
                 std::placeholders::_1));
 
@@ -131,8 +131,9 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
     can_frame_pub_->publish(
         AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
             *gear_cmd_, *turn_indicators_cmd_, *hazard_lights_cmd_,
-            *vehicle_emergency_cmd_, triggered_horn,
-            is_restricted_area_detect));
+            *vehicle_emergency_cmd_,is_restricted_area_detect,
+            triggered_horn
+            ));
 
     // ROS2 Debug Messages
     vehicle_motion_cmd_pub_->publish(
