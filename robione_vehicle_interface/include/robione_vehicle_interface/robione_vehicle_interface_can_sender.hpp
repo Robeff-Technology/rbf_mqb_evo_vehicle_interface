@@ -7,7 +7,6 @@
 #include <autoware_adapi_v1_msgs/msg/route_state.hpp>
 #include <autoware_control_msgs/msg/control.hpp>
 #include <autoware_system_msgs/msg/autoware_state.hpp>
-#include <autoware_vehicle_msgs/msg/engage.hpp>
 #include <autoware_vehicle_msgs/msg/gear_command.hpp>
 #include <autoware_vehicle_msgs/msg/hazard_lights_command.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_command.hpp>
@@ -64,10 +63,6 @@ private:
       SharedPtr turn_indicators_cmd_sub_;
   rclcpp::Subscription<autoware_vehicle_msgs::msg::HazardLightsCommand>::
       SharedPtr hazard_lights_cmd_sub_;
-  rclcpp::Subscription<autoware_vehicle_msgs::msg::Engage>::SharedPtr
-      engage_cmd_sub_;
-  rclcpp::Subscription<tier4_control_msgs::msg::GateMode>::SharedPtr
-      gate_mode_cmd_sub_;
   rclcpp::Subscription<tier4_vehicle_msgs::msg::VehicleEmergencyStamped>::
       SharedPtr vehicle_emergency_cmd_sub_;
   rclcpp::Subscription<autoware_adapi_v1_msgs::msg::RouteState>::SharedPtr
@@ -82,10 +77,6 @@ private:
       const autoware_vehicle_msgs::msg::TurnIndicatorsCommand::SharedPtr msg);
   void hazard_lights_cmd_callback(
       const autoware_vehicle_msgs::msg::HazardLightsCommand::SharedPtr msg);
-  void
-  engage_cmd_callback(const autoware_vehicle_msgs::msg::Engage::SharedPtr msg);
-  void gate_mode_cmd_callback(
-      const tier4_control_msgs::msg::GateMode::SharedPtr msg);
   void vehicle_emergency_cmd_callback(
       const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg);
   void route_state_callback(
@@ -102,8 +93,6 @@ private:
       turn_indicators_cmd_{nullptr};
   autoware_vehicle_msgs::msg::HazardLightsCommand::SharedPtr hazard_lights_cmd_{
       nullptr};
-  autoware_vehicle_msgs::msg::Engage::SharedPtr engage_cmd_{nullptr};
-  tier4_control_msgs::msg::GateMode::SharedPtr gate_mode_cmd_{nullptr};
   tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr
       vehicle_emergency_cmd_{nullptr};
   autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr route_state_ptr_{

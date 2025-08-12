@@ -45,14 +45,6 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
           std::bind(
               &RobioneVehicleInterfaceCanSender::hazard_lights_cmd_callback,
               this, std::placeholders::_1));
-  engage_cmd_sub_ = create_subscription<autoware_vehicle_msgs::msg::Engage>(
-      "/autoware/engage", rclcpp::QoS(1),
-      std::bind(&RobioneVehicleInterfaceCanSender::engage_cmd_callback, this,
-                std::placeholders::_1));
-  gate_mode_cmd_sub_ = create_subscription<tier4_control_msgs::msg::GateMode>(
-      "/control/current_gate_mode", rclcpp::QoS(1),
-      std::bind(&RobioneVehicleInterfaceCanSender::gate_mode_cmd_callback, this,
-                std::placeholders::_1));
   vehicle_emergency_cmd_sub_ =
       create_subscription<tier4_vehicle_msgs::msg::VehicleEmergencyStamped>(
           "/control/command/emergency_cmd", rclcpp::QoS(1),
@@ -118,18 +110,6 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback() {
     is_all_received = false;
   }
 
-  if (engage_cmd_ == nullptr) {
-    RCLCPP_WARN_THROTTLE(get_logger(), clock, 1000,
-                         "engage_cmd is not received");
-    is_all_received = false;
-  }
-
-  if (gate_mode_cmd_ == nullptr) {
-    RCLCPP_WARN_THROTTLE(get_logger(), clock, 1000,
-                         "gate_mode_cmd is not received");
-    is_all_received = false;
-  }
-
   if (vehicle_emergency_cmd_ == nullptr) {
     RCLCPP_WARN_THROTTLE(get_logger(), clock, 1000,
                          "vehicle_emergency_cmd is not received");
@@ -182,16 +162,6 @@ void RobioneVehicleInterfaceCanSender::turn_indicators_cmd_callback(
 void RobioneVehicleInterfaceCanSender::hazard_lights_cmd_callback(
     const autoware_vehicle_msgs::msg::HazardLightsCommand::SharedPtr msg) {
   hazard_lights_cmd_ = msg;
-}
-
-void RobioneVehicleInterfaceCanSender::engage_cmd_callback(
-    const autoware_vehicle_msgs::msg::Engage::SharedPtr msg) {
-  engage_cmd_ = msg;
-}
-
-void RobioneVehicleInterfaceCanSender::gate_mode_cmd_callback(
-    const tier4_control_msgs::msg::GateMode::SharedPtr msg) {
-  gate_mode_cmd_ = msg;
 }
 
 void RobioneVehicleInterfaceCanSender::vehicle_emergency_cmd_callback(
