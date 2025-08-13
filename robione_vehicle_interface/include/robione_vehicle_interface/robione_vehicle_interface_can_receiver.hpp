@@ -16,16 +16,12 @@
 #ifndef ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
 #define ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
 
-
-
 #include "can_interface/vcu-binutil.h"
-
 #include "rclcpp/rclcpp.hpp"
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
 #include "can_msgs/msg/frame.hpp"
-
 #include "robione_vehicle_interface_msgs/msg/vehicle_info.hpp"
 #include "robione_vehicle_interface_msgs/msg/vehicle_status.hpp"
 #include <autoware_control_msgs/msg/control.hpp>
@@ -73,26 +69,20 @@ private:
   // diagnostics
   diagnostic_updater::Updater diag_updater_;
 
-
   rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleInfo>::SharedPtr vehicle_info_pub_;
   rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleStatus>::SharedPtr
     vehicle_status_pub_;
 
-
   vcu_rx_t vcu_rx_;
-
 
   void publish_vehicle_info(const VEHICLE_INFO_t & vehicle_info);
   void publish_vehicle_status(const VEHICLE_STATUS_t & vehicle_signal_status);
   // void publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds);
 
-
-
   // diagnostic callback
   void diagnostic_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
   // receive messages timestamp
-  
 
   rclcpp::Time receive_time_vehicle_info_;
   rclcpp::Time receive_time_vehicle_status_;

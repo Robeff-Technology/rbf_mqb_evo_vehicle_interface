@@ -15,8 +15,8 @@
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
-#include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
 #include <robione_vehicle_interface_msgs/msg/vehicle_commands.hpp>
+#include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_status_stamped.hpp>
@@ -39,11 +39,9 @@ public:
   static autoware_vehicle_msgs::msg::SteeringReport convert_to_autoware_steering_report(
     const VEHICLE_INFO_t & steering_report);
   static autoware_vehicle_msgs::msg::TurnIndicatorsReport
-  convert_to_autoware_turn_indicators_report(
-    const VEHICLE_STATUS_t & turn_indicators_report);
+  convert_to_autoware_turn_indicators_report(const VEHICLE_STATUS_t & turn_indicators_report);
   static autoware_vehicle_msgs::msg::VelocityReport convert_to_autoware_velocity_report(
-    const VEHICLE_INFO_t & velocity_report,
-    std::string base_link);
+    const VEHICLE_INFO_t & velocity_report, std::string base_link);
 
   static tier4_vehicle_msgs::msg::SteeringWheelStatusStamped convert_to_tier4_steering_wheel_status(
     const VEHICLE_INFO_t & steering_wheel_status);
@@ -59,16 +57,14 @@ public:
     const autoware_control_msgs::msg::Control & control_cmd, float velocity_limit);
 
   static can_msgs::msg::Frame convert_autoware_vehicle_cmd(
-  autoware_vehicle_msgs::msg::GearCommand & gear_cmd,
-  autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
-  autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
-  tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
-  bool is_restricted_area,
-  bool horn_activate);
+    autoware_vehicle_msgs::msg::GearCommand & gear_cmd,
+    autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
+    autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
+    tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
+    bool is_restricted_area, bool horn_activate);
 
   static robione_vehicle_interface_msgs::msg::VehicleMotionCommands convert_to_vehicle_motion_cmd();
   static robione_vehicle_interface_msgs::msg::VehicleCommands convert_to_vehicle_cmd();
   static can_msgs::msg::Frame convert_vehicle_interface_life_signal();
-
 };
 }  // namespace robione_vehicle_interface

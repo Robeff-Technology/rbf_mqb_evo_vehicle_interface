@@ -100,8 +100,7 @@ AutowareSocketcanBridge::convert_to_autoware_turn_indicators_report(
 
 autoware_vehicle_msgs::msg::VelocityReport
 AutowareSocketcanBridge::convert_to_autoware_velocity_report(
-  const VEHICLE_INFO_t & vehicle_info,
-  std::string base_link)
+  const VEHICLE_INFO_t & vehicle_info, std::string base_link)
 {
   autoware_vehicle_msgs::msg::VelocityReport velocity_report_msg;
   velocity_report_msg.header.frame_id = base_link;
@@ -146,15 +145,18 @@ AutowareSocketcanBridge::convert_to_vehicle_motion_cmd()
   robione_vehicle_interface_msgs::msg::VehicleMotionCommands vehicle_motion_cmd_msg;
   vehicle_motion_cmd_msg.stamp = rclcpp::Clock().now();
 
-  vehicle_motion_cmd_msg.set_front_wheel_tire_angle = vehicle_motion_cmd_.set_front_wheel_tire_angle_phys;
-  vehicle_motion_cmd_msg.set_front_wheel_angle_rate = vehicle_motion_cmd_.set_front_wheel_angle_rate_phys;
+  vehicle_motion_cmd_msg.set_front_wheel_tire_angle =
+    vehicle_motion_cmd_.set_front_wheel_tire_angle_phys;
+  vehicle_motion_cmd_msg.set_front_wheel_angle_rate =
+    vehicle_motion_cmd_.set_front_wheel_angle_rate_phys;
   vehicle_motion_cmd_msg.set_velocity = vehicle_motion_cmd_.set_velocity_phys;
   vehicle_motion_cmd_msg.set_limit_velocity = vehicle_motion_cmd_.set_limit_velocity_phys;
 
   return vehicle_motion_cmd_msg;
 }
 
-robione_vehicle_interface_msgs::msg::VehicleCommands AutowareSocketcanBridge::convert_to_vehicle_cmd()
+robione_vehicle_interface_msgs::msg::VehicleCommands
+AutowareSocketcanBridge::convert_to_vehicle_cmd()
 {
   robione_vehicle_interface_msgs::msg::VehicleCommands vehicle_cmd_msg;
   vehicle_cmd_msg.stamp = rclcpp::Clock().now();
@@ -180,12 +182,13 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_vehicle_motion
   vehicle_motion_cmd_.set_velocity_phys = control_cmd.longitudinal.velocity;
   vehicle_motion_cmd_.set_limit_velocity_phys = velocity_limit;
   vehicle_motion_cmd_.set_front_wheel_tire_angle_phys = control_cmd.lateral.steering_tire_angle;
-  
+
   // Check if tire rate is defined
   if (control_cmd.lateral.is_defined_steering_tire_rotation_rate == false) {
     vehicle_motion_cmd_.set_front_wheel_angle_rate_phys = tire_rate;
   } else {
-    vehicle_motion_cmd_.set_front_wheel_angle_rate_phys = control_cmd.lateral.steering_tire_rotation_rate;
+    vehicle_motion_cmd_.set_front_wheel_angle_rate_phys =
+      control_cmd.lateral.steering_tire_rotation_rate;
   }
 
   frame.id = Pack_VEHICLE_MOTION_COMMANDS_vcu(&vehicle_motion_cmd_, frame.data.data(), &len, &ide);
@@ -196,13 +199,11 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_vehicle_motion
   return frame;
 }
 
-
 can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   autoware_vehicle_msgs::msg::GearCommand & gear_cmd,
   autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
   autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
-  tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
-  bool is_restricted_area,
+  tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd, bool is_restricted_area,
   bool horn_activate)
 {
   uint8_t len, ide;
@@ -249,23 +250,20 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
     default:
       break;
   }
-  
-
 
   // Set Emergency Request
   vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency;
 
   // Set Horn
-  if(horn_activate) {
+  if (horn_activate) {
     vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_OPEN;
   } else {
     vehicle_cmd_.horn = horn_VEHICLE_COMMANDS_HORN_CLOSE;
   }
 
-  if(is_restricted_area) {
+  if (is_restricted_area) {
     vehicle_cmd_.safety_inactive = 1;
-  }
-  else {
+  } else {
     vehicle_cmd_.safety_inactive = 0;
   }
   frame.id = Pack_VEHICLE_COMMANDS_vcu(&vehicle_cmd_, frame.data.data(), &len, &ide);
@@ -284,7 +282,8 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_vehicle_interface_life_sig
   VEHICLE_INTERFACE_LIFE_SIGNAL_t vehicle_interface_life_signal;
   vehicle_interface_life_signal.life_signal = rclcpp::Clock().now().nanoseconds();
 
-  frame.id = Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(&vehicle_interface_life_signal, frame.data.data(), &len, &ide);
+  frame.id = Pack_VEHICLE_INTERFACE_LIFE_SIGNAL_vcu(
+    &vehicle_interface_life_signal, frame.data.data(), &len, &ide);
   frame.is_extended = ide;
   frame.is_rtr = false;
   frame.dlc = len;

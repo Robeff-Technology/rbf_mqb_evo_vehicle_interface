@@ -1,10 +1,10 @@
 #include "robione_vehicle_interface/robione_vehicle_interface_can_receiver.hpp"
-
 #include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
 
 namespace robione_vehicle_interface
 {
-RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(const rclcpp::NodeOptions & options)
+RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(
+  const rclcpp::NodeOptions & options)
 : Node{"robione_vehicle_interface_can_receiver", options}, diag_updater_{this}
 {
   // params
@@ -15,14 +15,14 @@ RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(const rcl
   // subscriptions
   can_frame_sub_ = this->create_subscription<can_msgs::msg::Frame>(
     "/from_can_bus", 100,
-    std::bind(&RobioneVehicleInterfaceCanReceiver::can_receive_callback, this, std::placeholders::_1));
+    std::bind(
+      &RobioneVehicleInterfaceCanReceiver::can_receive_callback, this, std::placeholders::_1));
 
   // publishers
   vehicle_info_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleInfo>(
     "robione_vehicle_interface/vehicle_info", 10);
-  vehicle_status_pub_ =
-    this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleStatus>(
-      "robione_vehicle_interface/vehicle_status", 10);
+  vehicle_status_pub_ = this->create_publisher<robione_vehicle_interface_msgs::msg::VehicleStatus>(
+    "robione_vehicle_interface/vehicle_status", 10);
 
   // autoware publishers
   control_mode_pub_ = create_publisher<autoware_vehicle_msgs::msg::ControlModeReport>(
@@ -55,8 +55,8 @@ RobioneVehicleInterfaceCanReceiver::RobioneVehicleInterfaceCanReceiver(const rcl
 
 void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
 {
-  control_mode_pub_->publish(AutowareSocketcanBridge::convert_to_autoware_control_mode_report(
-    vcu_rx_.VEHICLE_STATUS));
+  control_mode_pub_->publish(
+    AutowareSocketcanBridge::convert_to_autoware_control_mode_report(vcu_rx_.VEHICLE_STATUS));
 
   vehicle_twist_pub_->publish(AutowareSocketcanBridge::convert_to_autoware_velocity_report(
     vcu_rx_.VEHICLE_INFO, base_frame_id_));
@@ -64,28 +64,23 @@ void RobioneVehicleInterfaceCanReceiver::data_publish_timer_callback(void)
   steering_status_pub_->publish(
     AutowareSocketcanBridge::convert_to_autoware_steering_report(vcu_rx_.VEHICLE_INFO));
 
-  gear_status_pub_->publish(AutowareSocketcanBridge::convert_to_autoware_gear_report(
-    vcu_rx_.VEHICLE_STATUS));
+  gear_status_pub_->publish(
+    AutowareSocketcanBridge::convert_to_autoware_gear_report(vcu_rx_.VEHICLE_STATUS));
 
   turn_indicators_status_pub_->publish(
-    AutowareSocketcanBridge::convert_to_autoware_turn_indicators_report(
-      vcu_rx_.VEHICLE_STATUS));
+    AutowareSocketcanBridge::convert_to_autoware_turn_indicators_report(vcu_rx_.VEHICLE_STATUS));
 
   hazard_lights_status_pub_->publish(
-    AutowareSocketcanBridge::convert_to_autoware_hazard_light_report(
-      vcu_rx_.VEHICLE_STATUS));
+    AutowareSocketcanBridge::convert_to_autoware_hazard_light_report(vcu_rx_.VEHICLE_STATUS));
 
   steering_wheel_status_pub_->publish(
-    AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(
-      vcu_rx_.VEHICLE_INFO));
+    AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(vcu_rx_.VEHICLE_INFO));
 }
-
 
 void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
   if (vcu_Receive(
-        &(RobioneVehicleInterfaceCanReceiver::vcu_rx_), msg->data.data(), msg->id,
-        msg->dlc)) {
+        &(RobioneVehicleInterfaceCanReceiver::vcu_rx_), msg->data.data(), msg->id, msg->dlc)) {
     switch (msg->id) {
       case VEHICLE_INFO_CANID:
         receive_time_vehicle_info_ = msg->header.stamp;
@@ -100,12 +95,10 @@ void RobioneVehicleInterfaceCanReceiver::can_receive_callback(can_msgs::msg::Fra
     }
   }
 
-  if(msg->id == 0xA0002DBU) {
+  if (msg->id == 0xA0002DBU) {
     system("pkill -f /robione_vehicle_interface_sender");
     rclcpp::shutdown();
   }
-
-
 }
 
 void RobioneVehicleInterfaceCanReceiver::publish_vehicle_info(const VEHICLE_INFO_t & vehicle_info)
@@ -135,7 +128,6 @@ void RobioneVehicleInterfaceCanReceiver::publish_vehicle_status(
   msg.handbrake = vehicle_status.hand_brake;
   vehicle_status_pub_->publish(msg);
 }
-
 
 void RobioneVehicleInterfaceCanReceiver::diagnostic_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
