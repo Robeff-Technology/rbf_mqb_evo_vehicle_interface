@@ -54,7 +54,8 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
         std::placeholders::_1));
 
   sub_route_state_ = this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
-    "/api/ad_api_adapter/routing_state", rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local(),
+    "/api/ad_api_adapter/routing_state",
+    rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local(),
     std::bind(
       &RobioneVehicleInterfaceCanSender::route_state_callback, this, std::placeholders::_1));
 
@@ -184,8 +185,6 @@ void RobioneVehicleInterfaceCanSender::route_state_callback(
   if (route_state_ptr_->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
     arrived_timer_ = rclcpp::Clock().now();
     is_arrived_triggered = true;
-  } else {
-    is_arrived_triggered = false;
   }
 }
 
