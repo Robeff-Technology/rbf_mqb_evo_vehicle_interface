@@ -29,6 +29,8 @@ ament_auto_add_library(robione_vehicle_interface_can_recv SHARED
 ament_auto_add_library(robione_vehicle_interface_can_sender SHARED
         src/robione_vehicle_interface_can_sender.cpp
         src/autoware_socketcan_bridge.cpp
+        src/serial_port.cpp
+        src/ultrasonic.cpp
 )
 
 target_link_libraries(robione_vehicle_interface_can_recv can_interface)

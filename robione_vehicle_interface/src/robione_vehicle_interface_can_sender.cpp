@@ -1,7 +1,11 @@
 #include "robione_vehicle_interface/robione_vehicle_interface_can_sender.hpp"
 
 #include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
+#include "robione_vehicle_interface/ultrasonic.h"
 
+#include <robione_vehicle_interface_msgs/msg/ultrasonic_status.hpp>
+
+#include <cmath>
 #include <cstdlib>
 namespace robione_vehicle_interface
 {
@@ -14,9 +18,118 @@ RobioneVehicleInterfaceCanSender::RobioneVehicleInterfaceCanSender(
   steer_rate_ = declare_parameter("steering_angle_rate", 75.0);
   velocity_limit_ = declare_parameter("vehicle_velocity_limit", 10.0);
   msg_timeout_ = declare_parameter("autoware_msg_timeout_threshold", 1.0);
+  serial_port_ = declare_parameter("serial_port", "/dev/ttyUSB0");
+  baudrate_ = declare_parameter("baudrate", 9600);
 
   diag_updater_.setHardwareID("robione_vehicle_interface_can_sender");
   diag_updater_.add("CAN Status", this, &RobioneVehicleInterfaceCanSender::diagnostic_callback);
+
+  try {
+    serial_port_ptr_ = std::make_shared<SerialPort>(serial_port_.c_str());
+    serial_port_ptr_->open();
+    serial_port_ptr_->configure(baudrate_, 8, 'N', 1);
+  } catch (const SerialPortException & e) {
+    RCLCPP_ERROR(get_logger(), e.what());
+    rclcpp::shutdown();
+  }
+
+  // Ultrasonic filter parameter (time constant tau in seconds)
+  ultrasonic_last_emergency_change_time_ = rclcpp::Time(0);
+
+  // Ultrasonic publisher
+  ultrasonic_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::UltrasonicStatus>(
+    "/ultrasonic/status", rclcpp::QoS(10));
+
+  // Set ultrasonic parser callback to publish the parsed distance
+  ultrasonic_parser_.set_callback([this](uint16_t distance) {
+    // Apply exponential moving average filter without changing publish rate.
+    rclcpp::Time now = this->now();
+
+    // Special case: sensor reports 0 -> means 'no obstacle'.
+    // Publish immediately without filtering and reset emergency/filter state to avoid false
+    // detections.
+    if (distance == 0) {
+      robione_vehicle_interface_msgs::msg::UltrasonicStatus msg_zero;
+      msg_zero.stamp = now;
+      msg_zero.distance = 0;
+      msg_zero.is_emergency = false;
+      msg_zero.ultrasonic_entry_emergency = false;
+      // reset emergency/filter state
+      ultrasonic_emergency_state_ = false;
+      ultrasonic_emergency_counter_ = 0;
+      ultrasonic_emergency_exit_counter_ = 0;
+      ultrasonic_last_emergency_change_time_ = now;
+      has_ultrasonic_filtered_ = false;
+      msg_zero.ultrasonic_release_emergency_time = ultrasonic_last_emergency_change_time_;
+      if (ultrasonic_pub_) {
+        ultrasonic_pub_->publish(msg_zero);
+      }
+      return;
+    }
+
+    double dt = 0.1;  // default assumed period if first sample or time resolution fails
+    if (has_ultrasonic_filtered_) {
+      dt = (now - last_ultrasonic_time_).seconds();
+      if (dt <= 0.0) dt = 0.1;
+    }
+    last_ultrasonic_time_ = now;
+
+    double tau = ultrasonic_filter_time_constant_;
+    double alpha = dt / (tau + dt);  // standard discrete-time EMA alpha
+
+    double raw = static_cast<double>(distance);
+    if (!has_ultrasonic_filtered_) {
+      ultrasonic_filtered_distance_ = raw;
+      has_ultrasonic_filtered_ = true;
+    } else {
+      ultrasonic_filtered_distance_ = alpha * raw + (1.0 - alpha) * ultrasonic_filtered_distance_;
+    }
+
+    // Emergency detection with hysteresis + debounce
+    uint32_t filtered_mm = static_cast<uint32_t>(std::llround(ultrasonic_filtered_distance_));
+
+    // If not currently in emergency, require consecutive low samples to enter
+    if (!ultrasonic_emergency_state_) {
+      if (filtered_mm < ultrasonic_emergency_enter_threshold_) {
+        ultrasonic_emergency_counter_++;
+      } else {
+        ultrasonic_emergency_counter_ = 0;
+      }
+      if (ultrasonic_emergency_counter_ >= ultrasonic_emergency_count_required_) {
+        ultrasonic_emergency_state_ = true;
+        ultrasonic_last_emergency_change_time_ = now;
+        ultrasonic_emergency_exit_counter_ = 0;
+      }
+    } else {
+      // If emergency is active, enforce minimum hold time
+      double held_ms = (now - ultrasonic_last_emergency_change_time_).seconds() * 1000.0;
+      if (held_ms < static_cast<double>(ultrasonic_emergency_min_hold_ms_)) {
+        // keep emergency true until min hold time passes
+      } else {
+        // require consecutive readings above exit threshold to clear
+        if (filtered_mm > ultrasonic_emergency_exit_threshold_) {
+          ultrasonic_emergency_exit_counter_++;
+        } else {
+          ultrasonic_emergency_exit_counter_ = 0;
+        }
+        if (ultrasonic_emergency_exit_counter_ >= ultrasonic_emergency_count_required_) {
+          ultrasonic_emergency_state_ = false;
+          ultrasonic_last_emergency_change_time_ = now;
+          ultrasonic_emergency_counter_ = 0;
+        }
+      }
+    }
+
+    robione_vehicle_interface_msgs::msg::UltrasonicStatus msg;
+    msg.stamp = now;
+    msg.distance = filtered_mm;
+    msg.is_emergency = ultrasonic_emergency_state_;
+    // publish the last release time if available (zero time when none)
+    msg.ultrasonic_release_emergency_time = ultrasonic_last_emergency_change_time_;
+    if (ultrasonic_pub_) {
+      ultrasonic_pub_->publish(msg);
+    }
+  });
 
   // publishers
   vehicle_motion_cmd_pub_ =
@@ -123,12 +236,23 @@ void RobioneVehicleInterfaceCanSender::data_publish_timer_callback()
 
     can_frame_pub_->publish(AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
       *gear_cmd_, *turn_indicators_cmd_, *hazard_lights_cmd_, *vehicle_emergency_cmd_,
-      is_restricted_area_detect, triggered_horn));
+      ultrasonic_emergency_state_, is_restricted_area_detect, triggered_horn));
 
     // ROS2 Debug Messages
     vehicle_motion_cmd_pub_->publish(AutowareSocketcanBridge::convert_to_vehicle_motion_cmd());
 
     vehicle_cmd_pub_->publish(AutowareSocketcanBridge::convert_to_vehicle_cmd());
+  }
+
+  // Read incoming serial bytes and feed to ultrasonic parser
+  try {
+    char buf[128];
+    int n = serial_port_ptr_->read(buf, sizeof(buf));
+    if (n > 0) {
+      ultrasonic_parser_.process_bytes(reinterpret_cast<const uint8_t *>(buf), n);
+    }
+  } catch (const SerialPortException & e) {
+    RCLCPP_WARN_THROTTLE(get_logger(), clock, 2000, "Serial read error: %s", e.what());
   }
 }
 

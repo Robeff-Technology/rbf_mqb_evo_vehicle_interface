@@ -13,11 +13,15 @@
 #include <autoware_vehicle_msgs/srv/control_mode_command.hpp>
 #include <robeff_msgs/msg/sick_zone.hpp>
 #include <robeff_msgs/msg/tablet_feedback.hpp>
+#include <robione_vehicle_interface_msgs/msg/ultrasonic_status.hpp>
 #include <robione_vehicle_interface_msgs/msg/vehicle_commands.hpp>
 #include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/vehicle_emergency_stamped.hpp>
+
+#include <robione_vehicle_interface/serial_port.h>
+#include <robione_vehicle_interface/ultrasonic.h>
 
 namespace robione_vehicle_interface
 {
@@ -35,6 +39,8 @@ private:
   float steer_rate_;
   float velocity_limit_;
   float msg_timeout_;
+  std::string serial_port_;
+  int baudrate_;
 
   // diagnostics
   diagnostic_updater::Updater diag_updater_;
@@ -91,6 +97,28 @@ private:
 
   // Timer callback
   void data_publish_timer_callback();
+
+  // Serial port
+  std::shared_ptr<SerialPort> serial_port_ptr_;
+
+  // Ultrasonic parser and publisher
+  UltrasonicParser ultrasonic_parser_;
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::UltrasonicStatus>::SharedPtr
+    ultrasonic_pub_;
+  // Simple exponential moving average filter for ultrasonic distance
+  double ultrasonic_filtered_distance_ = 0.0;
+  double ultrasonic_filter_time_constant_ = 0.2;  // seconds (tau)
+  bool has_ultrasonic_filtered_ = false;
+  rclcpp::Time last_ultrasonic_time_;
+  // Emergency detection (hysteresis + debounce)
+  uint32_t ultrasonic_emergency_enter_threshold_ = 2000;  // mm
+  uint32_t ultrasonic_emergency_exit_threshold_ = 2200;   // mm (hysteresis)
+  int ultrasonic_emergency_count_required_ = 3;           // consecutive samples
+  int ultrasonic_emergency_min_hold_ms_ = 500;  // minimum hold time when emergency is active
+  int ultrasonic_emergency_counter_ = 0;
+  int ultrasonic_emergency_exit_counter_ = 0;
+  bool ultrasonic_emergency_state_ = false;
+  rclcpp::Time ultrasonic_last_emergency_change_time_;
 
   // Timeout checkers
   rclcpp::Time control_cmd_timeout_;

@@ -61,7 +61,7 @@ public:
     autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
     autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
     tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
-    bool is_restricted_area, bool horn_activate);
+    bool is_restricted_area, bool ultrasonic_emergency, bool horn_activate);
 
   static robione_vehicle_interface_msgs::msg::VehicleMotionCommands convert_to_vehicle_motion_cmd();
   static robione_vehicle_interface_msgs::msg::VehicleCommands convert_to_vehicle_cmd();
