@@ -21,31 +21,17 @@ ament_auto_add_library(can_interface SHARED
 )
 
 
-ament_auto_add_library(robione_vehicle_interface_can_recv SHARED
-        src/robione_vehicle_interface_can_receiver.cpp
+ament_auto_add_library(robione_vehicle_interface SHARED
+        src/robione_vehicle_interface.cpp
         src/autoware_socketcan_bridge.cpp
 )
 
-ament_auto_add_library(robione_vehicle_interface_can_sender SHARED
-        src/robione_vehicle_interface_can_sender.cpp
-        src/autoware_socketcan_bridge.cpp
-        src/serial_port.cpp
-        src/ultrasonic.cpp
+target_link_libraries(robione_vehicle_interface can_interface)
+
+rclcpp_components_register_node(robione_vehicle_interface
+        PLUGIN "robione_vehicle_interface::RobioneVehicleInterface"
+        EXECUTABLE robione_vehicle_interface_node
 )
-
-target_link_libraries(robione_vehicle_interface_can_recv can_interface)
-target_link_libraries(robione_vehicle_interface_can_sender can_interface)
-
-rclcpp_components_register_node(robione_vehicle_interface_can_recv
-        PLUGIN "robione_vehicle_interface::RobioneVehicleInterfaceCanReceiver"
-        EXECUTABLE robione_vehicle_interface_recv_node
-)
-
-rclcpp_components_register_node(robione_vehicle_interface_can_sender
-        PLUGIN "robione_vehicle_interface::RobioneVehicleInterfaceCanSender"
-        EXECUTABLE robione_vehicle_interface_sender_node
-)
-
 
 
 if(BUILD_TESTING)
