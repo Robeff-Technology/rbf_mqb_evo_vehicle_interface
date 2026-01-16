@@ -111,34 +111,6 @@ AutowareSocketcanBridge::convert_to_autoware_velocity_report(
   return velocity_report_msg;
 }
 
-tier4_vehicle_msgs::msg::SteeringWheelStatusStamped
-AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(
-  const VEHICLE_INFO_t & steering_wheel_status)
-{
-  tier4_vehicle_msgs::msg::SteeringWheelStatusStamped steering_wheel_status_msg;
-  steering_wheel_status_msg.stamp = rclcpp::Clock().now();
-
-  steering_wheel_status_msg.data = steering_wheel_status.steering_wheel_angle_phys;
-
-  return steering_wheel_status_msg;
-}
-
-/* ## Is this necessary? There is nothing about throttle and brake in DBC file
-tier4_vehicle_msgs::msg::ActuationStatusStamped
-AutowareSocketcanBridge::convert_to_tier4_actuation_status(
-  const MOTION_INFO_t & actuation_status, std::string base_link)
-{
-  tier4_vehicle_msgs::msg::ActuationStatusStamped actuation_status_msg;
-  actuation_status_msg.header.stamp = rclcpp::Clock().now();
-  actuation_status_msg.header.frame_id = base_link;
-
-  actuation_status_msg.status.accel_status = actuation_status.throttle_phys;
-  actuation_status_msg.status.brake_status = actuation_status.brake;
-
-  return actuation_status_msg;
-}
-*/
-
 robione_vehicle_interface_msgs::msg::VehicleMotionCommands
 AutowareSocketcanBridge::convert_to_vehicle_motion_cmd()
 {

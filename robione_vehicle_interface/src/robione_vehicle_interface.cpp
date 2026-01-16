@@ -96,12 +96,10 @@ RobioneVehicleInterface::RobioneVehicleInterface(
   turn_indicators_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>(
     "/vehicle/status/turn_indicators_status", rclcpp::QoS{1});
   hazard_lights_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::HazardLightsReport>(
-    "/vehicle/status/hazard_lights_status", rclcpp::QoS{1});
+    "/vehicle/status/hazard_lights_status", rclcpp::QoS{1}); // DO WE NEED IT?
   steering_wheel_status_pub_ =
     create_publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>(
       "/vehicle/status/steering_wheel_status", 1);
-  // actuation_status_pub_ = create_publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>(
-  //   "/vehicle/status/actuation_status", rclcpp::QoS{1});
 
   // diagnostics
   // DIAGNOSTICS INCLUDE "robione_vehicle" ARE NOT VISIBLE ON DIAGNOSTICS TOPIC
@@ -148,9 +146,6 @@ void RobioneVehicleInterface::data_publish_timer_callback(void)
 
   hazard_lights_status_pub_->publish(
     AutowareSocketcanBridge::convert_to_autoware_hazard_light_report(vcu_rx_.VEHICLE_STATUS));
-
-  steering_wheel_status_pub_->publish(
-    AutowareSocketcanBridge::convert_to_tier4_steering_wheel_status(vcu_rx_.VEHICLE_INFO));
 }
 
 void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
@@ -232,16 +227,15 @@ void RobioneVehicleInterface::receiver_diagnostic_callback(
 
 
 // SENDER CALLBACKS
-
 void RobioneVehicleInterface::data_publish_can_timer_callback()
 {
   rclcpp::Clock clock{RCL_ROS_TIME};
   bool is_all_received = true;  // Flag to track if all messages are received
   bool triggered_horn = false;
 
-  can_frame_pub_->publish(AutowareSocketcanBridge::convert_vehicle_interface_life_signal());
+  can_frame_pub_->publish(AutowareSocketcanBridge::convert_vehicle_interface_life_signal()); // ASK WHAT IS IT 
 
-  // Check if any of the subscribed messages are nullptr and log warnings
+  // Check if any of the subscribed messages are nullptr and log warningspublish
   if (control_cmd_ == nullptr) {
     RCLCPP_WARN_THROTTLE(get_logger(), clock, 1000, "control_cmd is not received");
     is_all_received = false;

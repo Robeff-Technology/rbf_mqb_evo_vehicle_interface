@@ -117,7 +117,7 @@ private:
 
   // subscriptions
   rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_frame_pub_;
-
+  
   // robeff_msgs subscription
   rclcpp::Subscription<robeff_msgs::msg::TabletFeedback>::SharedPtr tablet_feedback_sub_;
   rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr sick_zone_sub_;
@@ -153,9 +153,6 @@ private:
     hazard_lights_status_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
-  // rclcpp::Publisher<tier4_vehicle_msgs::msg::ActuationStatusStamped>::SharedPtr
-  //   actuation_status_pub_;  
-  // SHOULD BE DELETED?
 
 
   // Timer

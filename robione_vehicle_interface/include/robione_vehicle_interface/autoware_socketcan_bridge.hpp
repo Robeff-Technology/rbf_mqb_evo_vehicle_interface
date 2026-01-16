@@ -42,11 +42,6 @@ public:
   convert_to_autoware_turn_indicators_report(const VEHICLE_STATUS_t & turn_indicators_report);
   static autoware_vehicle_msgs::msg::VelocityReport convert_to_autoware_velocity_report(
     const VEHICLE_INFO_t & velocity_report, std::string base_link);
-
-  static tier4_vehicle_msgs::msg::SteeringWheelStatusStamped convert_to_tier4_steering_wheel_status(
-    const VEHICLE_INFO_t & steering_wheel_status);
-  // static tier4_vehicle_msgs::msg::ActuationStatusStamped convert_to_tier4_actuation_status(
-  //   const VEHICLE_INFO_t & actuation_status, std::string base_link);
   static tier4_vehicle_msgs::msg::VehicleEmergencyStamped convert_to_tier4_vehicle_emergency(
     const VEHICLE_INFO_t & vehicle_emergency);
 
