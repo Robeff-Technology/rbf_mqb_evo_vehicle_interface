@@ -18,10 +18,10 @@
 
 #include "can_interface/vcu-binutil.h"
 #include "rclcpp/rclcpp.hpp"
-
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
 #include "can_msgs/msg/frame.hpp"
+#include <example_interfaces/msg/bool.hpp>
 #include <autoware_adapi_v1_msgs/msg/operation_mode_state.hpp>
 #include <autoware_adapi_v1_msgs/msg/route_state.hpp>
 #include "robione_vehicle_interface_msgs/msg/vehicle_info.hpp"
@@ -87,6 +87,14 @@ private:
   float steer_rate_;
   float velocity_limit_;
   float msg_timeout_;
+
+  // rain mode
+  bool rain_mode_{false};
+
+  // Rain mode subscriber
+  // What will be the interface here?
+  rclcpp::Subscription<example_interfaces::msg::Bool>::SharedPtr
+    rain_mode_sub_;
 
   // from CAN interface
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_frame_sub_;
@@ -165,6 +173,8 @@ private:
 
 
   // Callbacks
+  void rain_mode_callback(const example_interfaces::msg::Bool::SharedPtr msg);
+
   void control_cmd_callback(const autoware_control_msgs::msg::Control::SharedPtr msg);
   void gear_cmd_callback(const autoware_vehicle_msgs::msg::GearCommand::SharedPtr msg);
   void turn_indicators_cmd_callback(

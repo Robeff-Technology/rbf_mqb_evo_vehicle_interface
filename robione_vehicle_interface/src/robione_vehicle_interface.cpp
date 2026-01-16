@@ -16,6 +16,11 @@ RobioneVehicleInterface::RobioneVehicleInterface(
   msg_timeout_ = declare_parameter("autoware_msg_timeout_threshold", 1.0);
 
   //  subscriptions
+  //    Rain mode
+  rain_mode_sub_ = this->create_subscription<example_interfaces::msg::Bool>(
+    "/robione_vehicle_interface/rain_mode", rclcpp::QoS{1},
+    std::bind(
+      &RobioneVehicleInterface::rain_mode_callback, this, std::placeholders::_1));
   //    receiver
   can_frame_sub_ = this->create_subscription<can_msgs::msg::Frame>(
     "/from_can_bus", 100,
@@ -125,6 +130,7 @@ RobioneVehicleInterface::RobioneVehicleInterface(
     std::bind(&RobioneVehicleInterface::data_publish_can_timer_callback, this));
 
 }
+
 
 // RECEIVER CALLBACKS
 void RobioneVehicleInterface::data_publish_timer_callback(void)
@@ -351,10 +357,36 @@ void RobioneVehicleInterface::tablet_feedback_callback(
 void RobioneVehicleInterface::sick_zone_callback(
   const robeff_msgs::msg::SickZone::ConstSharedPtr msg)
 {
-  if (msg->state == robeff_msgs::msg::SickZone::DEACTIVATE) {
+  if (msg->state == robeff_msgs::msg::SickZone::DEACTIVATE || rain_mode_) {
     is_restricted_area_detect = true;
   } else {
     is_restricted_area_detect = false;
+  }
+}
+
+// Rain mode callback
+// This callback handles the rain mode setting for the vehicle interface.
+// If a valid message is received, it updates the rain_mode_ variable
+// and logs the change. If the message is null, it logs a warning.
+// Rain mode only changes if the incoming value is different from the current state.
+// else, it logs that the rain mode was already set.
+void RobioneVehicleInterface::rain_mode_callback(const example_interfaces::msg::Bool::SharedPtr msg)
+{
+  if (msg)
+  {
+    if (rain_mode_ != msg->data)
+    {
+      rain_mode_ = msg->data;
+      RCLCPP_INFO(this->get_logger(), "Rain mode set to: %s", rain_mode_ ? "enabled" : "disabled");
+    }
+    else
+    {
+      RCLCPP_INFO(this->get_logger(), "Rain mode was already enabled.");
+    }
+  }
+  else
+  {
+    RCLCPP_WARN(this->get_logger(), "Received null message for rain mode.");
   }
 }
 
