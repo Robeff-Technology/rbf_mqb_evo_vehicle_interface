@@ -18,7 +18,7 @@ RobioneVehicleInterface::RobioneVehicleInterface(
   //  subscriptions
   //    Rain mode
   rain_mode_sub_ = this->create_subscription<example_interfaces::msg::Bool>(
-    "/robione_vehicle_interface/rain_mode", rclcpp::QoS{1},
+    "/robione_vehicle_interface/rain_mode", rclcpp::QoS{1}.transient_local(),
     std::bind(
       &RobioneVehicleInterface::rain_mode_callback, this, std::placeholders::_1));
   //    receiver
