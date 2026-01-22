@@ -17,7 +17,6 @@
   <depend>tier4_vehicle_msgs</depend>
   <depend>tier4_control_msgs</depend>
   <depend>diagnostic_updater</depend>
-  <depend>example_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_components</depend>

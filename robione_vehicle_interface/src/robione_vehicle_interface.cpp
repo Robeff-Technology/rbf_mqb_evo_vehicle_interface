@@ -17,7 +17,7 @@ RobioneVehicleInterface::RobioneVehicleInterface(
 
   //  subscriptions
   //    Rain mode
-  rain_mode_sub_ = this->create_subscription<example_interfaces::msg::Bool>(
+  rain_mode_sub_ = this->create_subscription<std_msgs::msg::Bool>(
     "/robione_vehicle_interface/rain_mode", rclcpp::QoS{1}.transient_local(),
     std::bind(
       &RobioneVehicleInterface::rain_mode_callback, this, std::placeholders::_1));
@@ -370,7 +370,7 @@ void RobioneVehicleInterface::sick_zone_callback(
 // and logs the change. If the message is null, it logs a warning.
 // Rain mode only changes if the incoming value is different from the current state.
 // else, it logs that the rain mode was already set.
-void RobioneVehicleInterface::rain_mode_callback(const example_interfaces::msg::Bool::SharedPtr msg)
+void RobioneVehicleInterface::rain_mode_callback(const std_msgs::msg::Bool::SharedPtr msg)
 {
   if (msg)
   {
