@@ -18,14 +18,15 @@
 
 #include "can_interface/vcu-binutil.h"
 #include "rclcpp/rclcpp.hpp"
+#include "robione_vehicle_interface/serial_port.h"
+
 #include <diagnostic_updater/diagnostic_updater.hpp>
+#include <robione_vehicle_interface/param_loader.hpp>
+#include <robione_vehicle_interface/scheduler.hpp>
 
 #include "can_msgs/msg/frame.hpp"
-#include <std_msgs/msg/bool.hpp>
 #include <autoware_adapi_v1_msgs/msg/operation_mode_state.hpp>
 #include <autoware_adapi_v1_msgs/msg/route_state.hpp>
-#include "robione_vehicle_interface_msgs/msg/vehicle_info.hpp"
-#include "robione_vehicle_interface_msgs/msg/vehicle_status.hpp"
 #include <autoware_control_msgs/msg/control.hpp>
 #include <autoware_vehicle_msgs/msg/control_mode_report.hpp>
 #include <autoware_vehicle_msgs/msg/engage.hpp>
@@ -37,11 +38,10 @@
 #include <autoware_vehicle_msgs/msg/turn_indicators_command.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <robeff_msgs/msg/sick_zone.hpp>
 #include <robeff_msgs/msg/tablet_feedback.hpp>
-#include <robione_vehicle_interface_msgs/msg/vehicle_commands.hpp>
-#include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
-#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_status_stamped.hpp>
@@ -53,7 +53,6 @@
 #include <bitset>
 #include <string>
 #include <vector>
-#include "robione_vehicle_interface/serial_port.h"
 
 // TODO List
 // -> Constructor'lari birlestir
@@ -61,17 +60,19 @@
 
 namespace robione_vehicle_interface
 {
+
+struct CanWatchdog
+{
+  rclcpp::Time last_rx = rclcpp::Time(static_cast<int64_t>(0), RCL_ROS_TIME);
+  bool seen{false};
+};
+
 class RobioneVehicleInterface : public rclcpp::Node
 {
 public:
-
   explicit RobioneVehicleInterface(const rclcpp::NodeOptions & options);
 
   ~RobioneVehicleInterface() override = default;
-
-  // Serial port helpers
-  bool openSerialFromConfig();
-  bool openSerial(const std::string & port, unsigned int baud = 115200);
 
   /**
    * @brief It receives interface message from socketcan ROS2 bridge
@@ -79,58 +80,21 @@ public:
   void can_receive_callback(can_msgs::msg::Frame::SharedPtr msg);
 
 private:
-
-  void canFrameCallback(const can_msgs::msg::Frame::SharedPtr msg);
-
-  // params
-  //  receiver
-  double can_recv_timeout_threshold_;
-  unsigned int data_publish_rate_;
-  std::string base_frame_id_;
-
-  //  sender
-  float steer_rate_;
-  float velocity_limit_;
-  float msg_timeout_;
-
+  // Parameters
+  ParamLoader params_;
   // rain mode
-  bool rain_mode_{false};
+  bool rain_mode_;
+  // Scheduler
+  RateScheduler scheduler_{100};  // 100 Hz base tick
 
-  // Rain mode subscriber
-  // What will be the interface here?
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr
-    rain_mode_sub_;
+  // rain mode subscription
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr rain_mode_sub_;
 
   // from CAN interface
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_frame_sub_;
-  
-  // diagnostics
-  diagnostic_updater::Updater diag_updater_sender_;
-  diagnostic_updater::Updater diag_updater_receiver_;
-  // ASK IF THE DESIGN AND NAMING ARE TRUE
-  
-  // diagnostic callback
-  void sender_diagnostic_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
-  void receiver_diagnostic_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleInfo>::SharedPtr vehicle_info_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleStatus>::SharedPtr
-    vehicle_status_pub_;
+  vcu_rx_t vcu_rx_;  // receiver
 
-  vcu_rx_t vcu_rx_; // receiver
-
-  void publish_vehicle_info(const VEHICLE_INFO_t & vehicle_info);
-  void publish_vehicle_status(const VEHICLE_STATUS_t & vehicle_signal_status);
-  // void publish_wheel_speeds(const WHEEL_SPEEDS_t & wheel_speeds); ? IS IT NECESSARY
-
-  
-  // receive messages timestamp
-  rclcpp::Time receive_time_vehicle_info_;
-  rclcpp::Time receive_time_vehicle_status_;
-
-  // subscriptions
-  rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_frame_pub_;
-  
   // robeff_msgs subscription
   rclcpp::Subscription<robeff_msgs::msg::TabletFeedback>::SharedPtr tablet_feedback_sub_;
   rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr sick_zone_sub_;
@@ -146,14 +110,10 @@ private:
     vehicle_emergency_cmd_sub_;
   rclcpp::Subscription<autoware_adapi_v1_msgs::msg::RouteState>::SharedPtr sub_route_state_;
 
-
   /* Publishers */
 
-  // publishers for debug
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleMotionCommands>::SharedPtr
-    vehicle_motion_cmd_pub_;
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VehicleCommands>::SharedPtr
-    vehicle_cmd_pub_;
+  // Can Frame publisher
+  rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_frame_pub_;
 
   // To Autoware
   rclcpp::Publisher<autoware_vehicle_msgs::msg::ControlModeReport>::SharedPtr control_mode_pub_;
@@ -167,19 +127,8 @@ private:
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
 
-
-  // Timer
-  rclcpp::TimerBase::SharedPtr data_publish_timer_;
-  rclcpp::TimerBase::SharedPtr data_publish_can_timer_; // from sender
-  // Timer callback
-  void data_publish_timer_callback();
-  void data_publish_can_timer_callback();
-  // Check if timers can be reduced to one or not. If no, add a second timer so that they can work independantly
-
-
   // Callbacks
   void rain_mode_callback(const std_msgs::msg::Bool::SharedPtr msg);
-
   void control_cmd_callback(const autoware_control_msgs::msg::Control::SharedPtr msg);
   void gear_cmd_callback(const autoware_vehicle_msgs::msg::GearCommand::SharedPtr msg);
   void turn_indicators_cmd_callback(
@@ -200,17 +149,26 @@ private:
   tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr vehicle_emergency_cmd_{nullptr};
   autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr route_state_ptr_{nullptr};
 
-  // Timeout checkers
-  rclcpp::Time control_cmd_timeout_;
-  rclcpp::Time arrived_timer_;
+  // Serial port for communicating with vehicle (configured from params)
+  SerialPort serial_port_;
+  std::string serial_port_name_;
+  bool serial_is_open_{false};
+  // Serial port helpers
+  bool openSerialFromConfig();
+  bool openSerial(const std::string & port, unsigned int baud = 115200);
+
+  // diagnostics
+  diagnostic_updater::Updater diag_updater_;
+  std::unordered_map<uint32_t, CanWatchdog> can_watchdog_;
+  rclcpp::TimerBase::SharedPtr diag_timer_;
+
+  // diagnostic callback
+  void diagnostic_serial_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void diagnostic_can_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered = false;
   bool is_restricted_area_detect = false;
-
-  // Serial port for communicating with vehicle (configured from params)
-  SerialPort serial_port_;
-  bool serial_is_open_{false};
-
 };
 }  // namespace robione_vehicle_interface
 

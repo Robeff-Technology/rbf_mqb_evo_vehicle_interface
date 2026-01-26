@@ -15,8 +15,6 @@
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
-#include <robione_vehicle_interface_msgs/msg/vehicle_commands.hpp>
-#include <robione_vehicle_interface_msgs/msg/vehicle_motion_commands.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_status_stamped.hpp>
@@ -57,9 +55,7 @@ public:
     autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
     tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd,
     bool is_restricted_area, bool horn_activate);
-    
-  static robione_vehicle_interface_msgs::msg::VehicleMotionCommands convert_to_vehicle_motion_cmd();
-  static robione_vehicle_interface_msgs::msg::VehicleCommands convert_to_vehicle_cmd();
+
   static can_msgs::msg::Frame convert_vehicle_interface_life_signal();
 };
 }  // namespace robione_vehicle_interface

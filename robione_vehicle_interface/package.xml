@@ -24,7 +24,6 @@
   <depend>std_msgs</depend>
   <depend>can_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>robione_vehicle_interface_msgs</depend>
   <depend>robeff_msgs</depend>
   
 

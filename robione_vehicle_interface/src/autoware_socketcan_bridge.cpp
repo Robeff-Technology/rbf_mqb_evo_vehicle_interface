@@ -111,39 +111,6 @@ AutowareSocketcanBridge::convert_to_autoware_velocity_report(
   return velocity_report_msg;
 }
 
-robione_vehicle_interface_msgs::msg::VehicleMotionCommands
-AutowareSocketcanBridge::convert_to_vehicle_motion_cmd()
-{
-  robione_vehicle_interface_msgs::msg::VehicleMotionCommands vehicle_motion_cmd_msg;
-  vehicle_motion_cmd_msg.stamp = rclcpp::Clock().now();
-
-  vehicle_motion_cmd_msg.set_front_wheel_tire_angle =
-    vehicle_motion_cmd_.set_front_wheel_tire_angle_phys;
-  vehicle_motion_cmd_msg.set_front_wheel_angle_rate =
-    vehicle_motion_cmd_.set_front_wheel_angle_rate_phys;
-  vehicle_motion_cmd_msg.set_velocity = vehicle_motion_cmd_.set_velocity_phys;
-  vehicle_motion_cmd_msg.set_limit_velocity = vehicle_motion_cmd_.set_limit_velocity_phys;
-
-  return vehicle_motion_cmd_msg;
-}
-
-robione_vehicle_interface_msgs::msg::VehicleCommands
-AutowareSocketcanBridge::convert_to_vehicle_cmd()
-{
-  robione_vehicle_interface_msgs::msg::VehicleCommands vehicle_cmd_msg;
-  vehicle_cmd_msg.stamp = rclcpp::Clock().now();
-
-  vehicle_cmd_msg.set_autonomous = vehicle_cmd_.set_autonomous;
-  vehicle_cmd_msg.blinker = vehicle_cmd_.blinker;
-  vehicle_cmd_msg.headlight = vehicle_cmd_.headlight;
-  vehicle_cmd_msg.gear = vehicle_cmd_.gear;
-  vehicle_cmd_msg.handbrake = vehicle_cmd_.hand_brake;
-  vehicle_cmd_msg.emergency = vehicle_cmd_.emergency_request;
-  vehicle_cmd_msg.horn = vehicle_cmd_.horn;
-
-  return vehicle_cmd_msg;
-}
-
 can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_to_vehicle_motion_cmd(
   const autoware_control_msgs::msg::Control & control_cmd, float velocity_limit, float tire_rate)
 {
