@@ -5,3 +5,8 @@
     steering_angle_rate: 125.0 # [deg/s]
     vehicle_velocity_limit: 4.2 # [m/s]
     rain_mode: true
+    expected_control_cmd_hz: 33.0
+    expected_gear_cmd_hz: 0.0
+    expected_turn_indicators_cmd_hz: 0.0
+    expected_hazard_lights_cmd_hz: 0.0
+    expected_vehicle_emergency_cmd_hz: 33.0

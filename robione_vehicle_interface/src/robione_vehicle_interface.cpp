@@ -10,15 +10,22 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
 : Node{"robione_vehicle_interface", options},
   params_{this},
   diag_updater_{this},
-  rain_mode_{params_.get<bool>("rain_mode")},
-  serial_port_name_{params_.get<std::string>("serial_port")}
+  rain_mode_{params_.get_or<bool>("rain_mode", false)},
+  serial_port_name_{params_.get<std::string>("serial_port")},
+  cmd_rate_monitor_{
+    {"control_cmd", params_.get_or<double>("expected_control_cmd_hz", 33.0)},
+    {"gear_cmd", params_.get_or<double>("expected_gear_cmd_hz", 0.0)},
+    {"turn_indicators_cmd", params_.get_or<double>("expected_turn_indicators_cmd_hz", 0.0)},
+    {"hazard_lights_cmd", params_.get_or<double>("expected_hazard_lights_cmd_hz", 0.0)},
+    {"vehicle_emergency_cmd", params_.get_or<double>("expected_vehicle_emergency_cmd_hz", 33.0)}}
 {
   params_.print_loaded_parameters();
   diag_updater_.setHardwareID("robione_vehicle_interface");
   diag_updater_.add("Serial Status", this, &RobioneVehicleInterface::diagnostic_serial_callback);
   diag_updater_.add("CAN Status", this, &RobioneVehicleInterface::diagnostic_can_callback);
-  diag_timer_ = this->create_wall_timer(
-    std::chrono::seconds(1), [this]() { diag_updater_.force_update(); });
+  diag_updater_.add("Command Rate", this, &RobioneVehicleInterface::diagnostic_cmd_rate_callback);
+  diag_timer_ =
+    this->create_wall_timer(std::chrono::seconds(1), [this]() { diag_updater_.force_update(); });
   //  subscriptions
   //    Rain mode
   rain_mode_sub_ = this->create_subscription<std_msgs::msg::Bool>(
@@ -135,30 +142,35 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
 void RobioneVehicleInterface::control_cmd_callback(
   const autoware_control_msgs::msg::Control::SharedPtr msg)
 {
+  cmd_rate_monitor_.update("control_cmd", now());
   control_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::gear_cmd_callback(
   const autoware_vehicle_msgs::msg::GearCommand::SharedPtr msg)
 {
+  cmd_rate_monitor_.update("gear_cmd", now());
   gear_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::turn_indicators_cmd_callback(
   const autoware_vehicle_msgs::msg::TurnIndicatorsCommand::SharedPtr msg)
 {
+  cmd_rate_monitor_.update("turn_indicators_cmd", now());
   turn_indicators_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::hazard_lights_cmd_callback(
   const autoware_vehicle_msgs::msg::HazardLightsCommand::SharedPtr msg)
 {
+  cmd_rate_monitor_.update("hazard_lights_cmd", now());
   hazard_lights_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::vehicle_emergency_cmd_callback(
   const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg)
 {
+  cmd_rate_monitor_.update("vehicle_emergency_cmd", now());
   vehicle_emergency_cmd_ = msg;
 }
 
@@ -255,6 +267,12 @@ void RobioneVehicleInterface::diagnostic_can_callback(
   check_id(VEHICLE_INFO_CANID, "VEHICLE_INFO", timeout_s_slow);
   check_id(VEHICLE_STATUS_CANID, "VEHICLE_STATUS", timeout_s_slow);
   check_id(VEHICLE_INTERFACE_LIFE_SIGNAL_CANID, "VEHICLE_INTERFACE_LIFE_SIGNAL", timeout_s_fast);
+}
+
+void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
+  diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  cmd_rate_monitor_.report(stat);
 }
 };  // namespace robione_vehicle_interface
 

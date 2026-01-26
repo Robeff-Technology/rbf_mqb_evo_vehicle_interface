@@ -52,6 +52,7 @@
 
 #include <bitset>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // TODO List
@@ -65,6 +66,95 @@ struct CanWatchdog
 {
   rclcpp::Time last_rx = rclcpp::Time(static_cast<int64_t>(0), RCL_ROS_TIME);
   bool seen{false};
+};
+
+struct RateWatch
+{
+  rclcpp::Time last = rclcpp::Time(static_cast<int64_t>(0), RCL_ROS_TIME);
+  bool seen{false};
+  double last_hz{0.0};
+};
+
+class RateMonitor
+{
+public:
+  RateMonitor() = default;
+
+  RateMonitor(std::initializer_list<std::pair<std::string, double>> targets)
+  {
+    for (const auto & t : targets) {
+      entries_[t.first].expected_hz = t.second;
+    }
+  }
+
+  void add_target(const std::string & name, double expected_hz)
+  {
+    entries_[name].expected_hz = expected_hz;
+  }
+
+  void update(const std::string & name, const rclcpp::Time & now_time)
+  {
+    auto & entry = entries_[name];
+    auto & w = entry.watch;
+
+    if (w.seen) {
+      const double dt = (now_time - w.last).seconds();
+      if (dt > 0.0) {
+        w.last_hz = 1.0 / dt;
+      }
+    }
+
+    w.last = now_time;
+    w.seen = true;
+  }
+
+  void report(diagnostic_updater::DiagnosticStatusWrapper & stat) const
+  {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Command rates ok");
+
+    if (entries_.empty()) {
+      stat.add("rate_targets", "empty");
+      return;
+    }
+
+    for (const auto & kv : entries_) {
+      const auto & name = kv.first;
+      const auto & entry = kv.second;
+      const auto & w = entry.watch;
+      const double expected_hz = entry.expected_hz;
+
+      if (expected_hz <= 0.0) {
+        stat.addf(name, "disabled (expected %.2f Hz)", expected_hz);
+        continue;
+      }
+
+      if (!w.seen) {
+        stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "CMD missing");
+        stat.addf(name, "never received (expected %.2f Hz)", expected_hz);
+        continue;
+      }
+
+      const double min_hz = expected_hz * 0.9;
+      const double max_hz = expected_hz * 1.1;
+
+      if (w.last_hz < min_hz || w.last_hz > max_hz) {
+        stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "CMD rate out of range");
+        stat.addf(name, "%.2f Hz (expected %.2f Hz, range %.2f-%.2f Hz)", w.last_hz, expected_hz,
+          min_hz, max_hz);
+      } else {
+        stat.addf(name, "%.2f Hz (expected %.2f Hz)", w.last_hz, expected_hz);
+      }
+    }
+  }
+
+private:
+  struct Entry
+  {
+    RateWatch watch;
+    double expected_hz{0.0};
+  };
+
+  std::unordered_map<std::string, Entry> entries_;
 };
 
 class RobioneVehicleInterface : public rclcpp::Node
@@ -165,6 +255,9 @@ private:
   // diagnostic callback
   void diagnostic_serial_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
   void diagnostic_can_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void diagnostic_cmd_rate_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
+  RateMonitor cmd_rate_monitor_;
 
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered = false;
