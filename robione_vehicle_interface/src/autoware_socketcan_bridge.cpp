@@ -176,7 +176,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
   autoware_vehicle_msgs::msg::TurnIndicatorsCommand & turn_indicators_cmd,
   autoware_vehicle_msgs::msg::HazardLightsCommand & hazard_lights_cmd,
   tier4_vehicle_msgs::msg::VehicleEmergencyStamped & vehicle_emergency_cmd, bool is_restricted_area,
-  bool ultrasonic_emergency, bool horn_activate)
+  bool horn_activate)
 {
   uint8_t len, ide;
   auto frame = can_msgs::msg::Frame();
@@ -228,7 +228,7 @@ can_msgs::msg::Frame AutowareSocketcanBridge::convert_autoware_vehicle_cmd(
     vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency;
   } else {
     vehicle_cmd_.safety_inactive = 0;
-    vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency || ultrasonic_emergency;
+    vehicle_cmd_.emergency_request = vehicle_emergency_cmd.emergency;
   }
 
   // Set Emergency Request

@@ -1,5 +1,0 @@
-builtin_interfaces/Time stamp
-uint32 distance
-bool is_emergency
-bool ultrasonic_entry_emergency
-builtin_interfaces/Time ultrasonic_release_emergency_time

@@ -129,6 +129,37 @@ RobioneVehicleInterface::RobioneVehicleInterface(
     this, get_clock(), period_ns_sender,
     std::bind(&RobioneVehicleInterface::data_publish_can_timer_callback, this));
 
+    if (!openSerialFromConfig()) {
+    // Try to open serial port from parameters/config
+    RCLCPP_WARN(this->get_logger(), "Could not open serial port from config");
+  }
+
+}
+
+bool RobioneVehicleInterface::openSerialFromConfig()
+{
+  std::string port = this->declare_parameter("serial_port", std::string("/dev/ttyUSB0"));
+  return openSerial(port, 115200);
+}
+
+bool RobioneVehicleInterface::openSerial(const std::string & port, unsigned int baud)
+{
+  try {
+    serial_port_.set_port_name(port.c_str());
+    serial_port_.open();
+    serial_port_.configure(baud);
+    RCLCPP_INFO(this->get_logger(), "Opened serial port %s at %u baud", port.c_str(), baud);
+    serial_is_open_ = true;
+    return true;
+  } catch (const SerialPortException & e) {
+    RCLCPP_ERROR(this->get_logger(), "SerialPortException[%s]: %s", port.c_str(), e.what());
+    serial_is_open_ = false;
+    return false;
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "Exception opening serial[%s]: %s", port.c_str(), e.what());
+    serial_is_open_ = false;
+    return false;
+  }
 }
 
 
@@ -341,6 +372,7 @@ void RobioneVehicleInterface::route_state_callback(
   if (route_state_ptr_->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
     arrived_timer_ = rclcpp::Clock().now();
     is_arrived_triggered = true;
+    serial_port_.write("*CMD0#", sizeof("*CMD0#") - 1); // Send command to horn on arrival
   }
 }
 

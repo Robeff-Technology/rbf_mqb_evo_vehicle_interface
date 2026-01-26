@@ -53,6 +53,7 @@
 #include <bitset>
 #include <string>
 #include <vector>
+#include "robione_vehicle_interface/serial_port.h"
 
 // TODO List
 // -> Constructor'lari birlestir
@@ -67,6 +68,10 @@ public:
   explicit RobioneVehicleInterface(const rclcpp::NodeOptions & options);
 
   ~RobioneVehicleInterface() override = default;
+
+  // Serial port helpers
+  bool openSerialFromConfig();
+  bool openSerial(const std::string & port, unsigned int baud = 115200);
 
   /**
    * @brief It receives interface message from socketcan ROS2 bridge
@@ -201,6 +206,10 @@ private:
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered = false;
   bool is_restricted_area_detect = false;
+
+  // Serial port for communicating with vehicle (configured from params)
+  SerialPort serial_port_;
+  bool serial_is_open_{false};
 
 };
 }  // namespace robione_vehicle_interface

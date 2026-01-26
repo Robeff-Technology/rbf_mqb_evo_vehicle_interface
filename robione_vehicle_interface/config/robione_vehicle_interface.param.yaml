@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     base_frame_id: "base_link"
-    serial_port: "/dev/ttyUSB1"
+    serial_port: "/dev/call_system"
     can_recv_timeout_threshold: 1.0 # seconds
     autoware_msg_timeout_threshold: 1.0 # seconds
     data_publish_rate: 100 # [hz]

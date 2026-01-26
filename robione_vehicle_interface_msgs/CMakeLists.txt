@@ -14,7 +14,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
         "msg/VehicleInfo.msg"
         "msg/VehicleMotionCommands.msg"
         "msg/VehicleStatus.msg"
-        "msg/UltrasonicStatus.msg"
         DEPENDENCIES std_msgs
         ADD_LINTER_TESTS
 )
