@@ -8,4 +8,5 @@
     can_data_send_rate: 100 # [hz]
     steering_angle_rate: 125.0 # [deg/s]
     vehicle_velocity_limit: 4.2 # [m/s]
-
+    
+    rain_mode: false

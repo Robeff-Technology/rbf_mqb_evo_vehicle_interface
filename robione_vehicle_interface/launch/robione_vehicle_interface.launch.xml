@@ -3,12 +3,7 @@
   <arg name="robione_vehicle_interface_param_path" default="$(find-pkg-share robione_vehicle_interface)/config/robione_vehicle_interface.param.yaml"/>
 
   <!-- CAN Receiver -->
-  <node pkg="robione_vehicle_interface" exec="robione_vehicle_interface_recv_node" name="robione_vehicle_interface_recv" output="both">
-    <param from="$(var robione_vehicle_interface_param_path)"/>
-  </node>
-
-    <!-- CAN Receiver -->
-  <node pkg="robione_vehicle_interface" exec="robione_vehicle_interface_sender_node" name="robione_vehicle_interface_sender" output="both">
+  <node pkg="robione_vehicle_interface" exec="robione_vehicle_interface_node" name="robione_vehicle_interface" output="both">
     <param from="$(var robione_vehicle_interface_param_path)"/>
   </node>
 
