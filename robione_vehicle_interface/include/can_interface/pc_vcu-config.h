@@ -1,5 +1,5 @@
 // Generator version : v3.1
-// DBC filename      : robione_autonomous_pc.dbc
+// DBC filename      : pc_vcu_can_500k_v1.dbc
 #pragma once
 
 /* include common dbccode configurations */
@@ -12,7 +12,7 @@
 
   Note(!): bit-feild was not tested properly. */
 
-/* #define VCU_USE_BITS_SIGNAL */
+/* #define PC_VCU_USE_BITS_SIGNAL */
 
 
 /* ------------------------------------------------------------------------- *
@@ -28,7 +28,7 @@
 
   This struct definition have to be placed (or be included) in dbccodeconf.h */
 
-/* #define VCU_USE_CANSTRUCT */
+/* #define PC_VCU_USE_CANSTRUCT */
 
 
 /* ------------------------------------------------------------------------- *
@@ -49,7 +49,7 @@
   3. In unpack function '_phys' signal will be written by '_ro' signal.
   User have to use '_phys' signal to read physical value. */
 
-#define VCU_USE_SIGFLOAT
+ #define PC_VCU_USE_SIGFLOAT 
 
 
 /* ------------------------------------------------------------------------- *
@@ -68,20 +68,20 @@
   which is empty by default and have to be filled by user if
   tests for DLC, rolling, checksum are necessary */
 
-/* #define VCU_USE_DIAG_MONITORS */
+/* #define PC_VCU_USE_DIAG_MONITORS */
 
 
 /* ------------------------------------------------------------------------- *
-  When monitor using is enabled (VCU_USE_DIAG_MONITORS) and define below
+  When monitor using is enabled (PC_VCU_USE_DIAG_MONITORS) and define below
   uncommented, additional signal will be added to message struct. ***_expt:
   expected rolling counter, to perform monitoring rolling counter sequence
   automatically (result may be tested in dedicated Fmon_*** function) */
 
-/* #define VCU_AUTO_ROLL */
+/* #define PC_VCU_AUTO_ROLL */
 
 
 /* ------------------------------------------------------------------------- *
-  When monitor using is enabled (VCU_USE_DIAG_MONITORS) and define below
+  When monitor using is enabled (PC_VCU_USE_DIAG_MONITORS) and define below
   uncommented, frame checksum signal may be handled automatically.
 
   The signal which may be marked as checksum signal must have substring
@@ -107,7 +107,7 @@
   In unpack function checksum signal is checked with calculated.
   (result may be tested in dedicated Fmon_*** function). */
 
-/* #define VCU_AUTO_CSM */
+/* #define PC_VCU_AUTO_CSM */
 
 
 /* ------------------------------------------------------------------------- *
@@ -127,4 +127,4 @@
   no necessity to replace source code)
 
   For using MONO way uncomment line below */
-/* #define VCU_USE_MONO_FMON */
+/* #define PC_VCU_USE_MONO_FMON */

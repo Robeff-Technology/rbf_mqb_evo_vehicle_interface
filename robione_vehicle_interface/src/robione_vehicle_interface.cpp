@@ -1,7 +1,5 @@
 #include "robione_vehicle_interface/robione_vehicle_interface.hpp"
 
-#include "robione_vehicle_interface/autoware_socketcan_bridge.hpp"
-
 #include <chrono>
 
 namespace robione_vehicle_interface
@@ -9,9 +7,11 @@ namespace robione_vehicle_interface
 RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & options)
 : Node{"robione_vehicle_interface", options},
   params_{this},
-  diag_updater_{this},
-  rain_mode_{params_.get_or<bool>("rain_mode", false)},
+  scheduler_{100},  // 100 Hz base rate
+  vcu_ctrl_cmd_si_builder_{},
+  safe_stat_ros2_heartbeat_builder_{},
   serial_port_name_{params_.get<std::string>("serial_port")},
+  diag_updater_{this},
   cmd_rate_monitor_{
     {"control_cmd", params_.get_or<double>("expected_control_cmd_hz", 33.0)},
     {"gear_cmd", params_.get_or<double>("expected_gear_cmd_hz", 0.0)},
@@ -23,11 +23,29 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   diag_updater_.setHardwareID("robione_vehicle_interface");
   diag_updater_.add("Serial Status", this, &RobioneVehicleInterface::diagnostic_serial_callback);
   diag_updater_.add("CAN Status", this, &RobioneVehicleInterface::diagnostic_can_callback);
-  diag_updater_.add("Command Rate", this, &RobioneVehicleInterface::diagnostic_cmd_rate_callback);
-  diag_timer_ =
-    this->create_wall_timer(std::chrono::seconds(1), [this]() { diag_updater_.force_update(); });
-  //  subscriptions
-  //    Rain mode
+  diag_updater_.add(
+    "Autoware Command Rate", this, &RobioneVehicleInterface::diagnostic_cmd_rate_callback);
+  init_subscribers();
+  init_publishers();
+
+  if (!openSerialFromConfig()) {
+    // Try to open serial port from parameters/config
+    RCLCPP_WARN(this->get_logger(), "Could not open serial port from config");
+  }
+
+  // Register tasks
+  scheduler_.add_task(20, [this]() { task_20ms(); });  // 50 Hz
+  scheduler_.add_task(50, [this]() { task_50ms(); });  // 20 Hz
+
+  // 100 Hz base timer
+  timer_100Hz_ = this->create_wall_timer(std::chrono::milliseconds(10), [this]() {
+    scheduler_.tick();  // Runs tasks internally
+  });
+}
+
+void RobioneVehicleInterface::init_subscribers()
+{
+  // Rain mode
   rain_mode_sub_ = this->create_subscription<std_msgs::msg::Bool>(
     "/robione_vehicle_interface/rain_mode", rclcpp::QoS{1}.transient_local(),
     std::bind(&RobioneVehicleInterface::rain_mode_callback, this, std::placeholders::_1));
@@ -36,9 +54,8 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   can_frame_sub_ = this->create_subscription<can_msgs::msg::Frame>(
     "/from_can_bus", 100,
     std::bind(&RobioneVehicleInterface::can_receive_callback, this, std::placeholders::_1));
-  can_frame_pub_ = create_publisher<can_msgs::msg::Frame>("to_can_bus", rclcpp::QoS(500));
 
-  //    subscriptions
+  // Autoware command subscriptions
   control_cmd_sub_ = create_subscription<autoware_control_msgs::msg::Control>(
     "/control/command/control_cmd", rclcpp::QoS(1),
     std::bind(&RobioneVehicleInterface::control_cmd_callback, this, std::placeholders::_1));
@@ -73,8 +90,16 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   sick_zone_sub_ = this->create_subscription<robeff_msgs::msg::SickZone>(
     "/api/sick/zone", rclcpp::QoS(1).transient_local().reliable(),
     std::bind(&RobioneVehicleInterface::sick_zone_callback, this, std::placeholders::_1));
+}
 
-  // autoware publishers
+void RobioneVehicleInterface::init_publishers()
+{
+  // socketcan
+  can_frame_pub_ = create_publisher<can_msgs::msg::Frame>("to_can_bus", rclcpp::QoS(500));
+  vcu_ctrl_cmd_si_pub_ = create_publisher<robione_vehicle_interface_msgs::msg::VcuCtrlCmdSi>(
+    "/robione_vehicle_interface/vcu_ctrl_cmd_si", rclcpp::QoS(10));
+
+  // autoware
   control_mode_pub_ = create_publisher<autoware_vehicle_msgs::msg::ControlModeReport>(
     "/vehicle/status/control_mode", rclcpp::QoS{1});
   vehicle_twist_pub_ = create_publisher<autoware_vehicle_msgs::msg::VelocityReport>(
@@ -90,11 +115,6 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   steering_wheel_status_pub_ =
     create_publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>(
       "/vehicle/status/steering_wheel_status", 1);
-
-  if (!openSerialFromConfig()) {
-    // Try to open serial port from parameters/config
-    RCLCPP_WARN(this->get_logger(), "Could not open serial port from config");
-  }
 }
 
 bool RobioneVehicleInterface::openSerialFromConfig()
@@ -124,7 +144,7 @@ bool RobioneVehicleInterface::openSerial(const std::string & port, unsigned int 
 
 void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
-  if (vcu_Receive(&(RobioneVehicleInterface::vcu_rx_), msg->data.data(), msg->id, msg->dlc)) {
+  if (pc_vcu_Receive(&(RobioneVehicleInterface::pc_vcu_rx_), msg->data.data(), msg->id, msg->dlc)) {
     // Successfully parsed the CAN frame
     auto it = can_watchdog_.find(msg->id);
     if (it != can_watchdog_.end()) {
@@ -134,7 +154,8 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
   }
 
   if (msg->id == 0xA0002DBU) {
-    system("pkill -f /robione_vehicle_interface");
+    const int system_rc = system("pkill -f /robione_vehicle_interface");
+    (void)system_rc;
     rclcpp::shutdown();
   }
 }
@@ -142,44 +163,54 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
 void RobioneVehicleInterface::control_cmd_callback(
   const autoware_control_msgs::msg::Control::SharedPtr msg)
 {
+  vcu_ctrl_cmd_si_builder_.set_vehicle_speed_ms_cmd(msg->longitudinal.velocity);
+  vcu_ctrl_cmd_si_builder_.set_tire_angle_rad_cmd(msg->lateral.steering_tire_angle);
   cmd_rate_monitor_.update("control_cmd", now());
-  control_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::gear_cmd_callback(
   const autoware_vehicle_msgs::msg::GearCommand::SharedPtr msg)
 {
+  vcu_ctrl_cmd_si_builder_.set_gear_req(
+    static_cast<CanMsgBuilder::VcuCtrlCmdSi::GearReq>(msg->command));
   cmd_rate_monitor_.update("gear_cmd", now());
-  gear_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::turn_indicators_cmd_callback(
   const autoware_vehicle_msgs::msg::TurnIndicatorsCommand::SharedPtr msg)
 {
+  if (msg->command == autoware_vehicle_msgs::msg::TurnIndicatorsCommand::ENABLE_LEFT) {
+    vcu_ctrl_cmd_si_builder_.set_turn_left(true);
+    vcu_ctrl_cmd_si_builder_.set_turn_right(false);
+  } else if (msg->command == autoware_vehicle_msgs::msg::TurnIndicatorsCommand::ENABLE_RIGHT) {
+    vcu_ctrl_cmd_si_builder_.set_turn_left(false);
+    vcu_ctrl_cmd_si_builder_.set_turn_right(true);
+  } else {  // NONE
+    vcu_ctrl_cmd_si_builder_.set_turn_left(false);
+    vcu_ctrl_cmd_si_builder_.set_turn_right(false);
+  }
   cmd_rate_monitor_.update("turn_indicators_cmd", now());
-  turn_indicators_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::hazard_lights_cmd_callback(
   const autoware_vehicle_msgs::msg::HazardLightsCommand::SharedPtr msg)
 {
+  vcu_ctrl_cmd_si_builder_.set_hazard(
+    msg->command == autoware_vehicle_msgs::msg::HazardLightsCommand::ENABLE);
   cmd_rate_monitor_.update("hazard_lights_cmd", now());
-  hazard_lights_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::vehicle_emergency_cmd_callback(
   const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg)
 {
+  vcu_ctrl_cmd_si_builder_.set_emergency_active(msg->emergency);
   cmd_rate_monitor_.update("vehicle_emergency_cmd", now());
-  vehicle_emergency_cmd_ = msg;
 }
 
 void RobioneVehicleInterface::route_state_callback(
   const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg)
 {
-  route_state_ptr_ = msg;
-  if (route_state_ptr_->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
-    is_arrived_triggered = true;
+  if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
     serial_port_.write("*CMD0#", sizeof("*CMD0#") - 1);  // Send command to horn on arrival
   }
 }
@@ -198,9 +229,9 @@ void RobioneVehicleInterface::sick_zone_callback(
   const robeff_msgs::msg::SickZone::ConstSharedPtr msg)
 {
   if (msg->state == robeff_msgs::msg::SickZone::DEACTIVATE || rain_mode_) {
-    is_restricted_area_detect = true;
+    vcu_ctrl_cmd_si_builder_.set_safety_disable(true);
   } else {
-    is_restricted_area_detect = false;
+    vcu_ctrl_cmd_si_builder_.set_safety_disable(false);
   }
 }
 
@@ -242,7 +273,6 @@ void RobioneVehicleInterface::diagnostic_can_callback(
   stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "CAN ok");
 
   const double timeout_s_fast = 0.2;  // 200ms
-  const double timeout_s_slow = 0.5;  // 500ms
 
   const auto now_time = now();
 
@@ -264,17 +294,45 @@ void RobioneVehicleInterface::diagnostic_can_callback(
     }
   };
 
-  check_id(VEHICLE_INFO_CANID, "VEHICLE_INFO", timeout_s_slow);
-  check_id(VEHICLE_STATUS_CANID, "VEHICLE_STATUS", timeout_s_slow);
-  check_id(VEHICLE_INTERFACE_LIFE_SIGNAL_CANID, "VEHICLE_INTERFACE_LIFE_SIGNAL", timeout_s_fast);
+  check_id(VCU_STAT_MOTION_SI_CANID, "VCU_STAT_MOTION", timeout_s_fast);
+  check_id(VCU_STAT_VEHICLE_STATE_CANID, "VCU_STAT_VEHICLE_STATE", timeout_s_fast);
 }
 
 void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  cmd_rate_monitor_.report(stat);
+  const bool any_seen = cmd_rate_monitor_.any_seen();
+
+  RCLCPP_INFO(this->get_logger(), "Diagnostic CMD Rate Callback any_seen=%d", any_seen);
+  if (!any_seen) {
+    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
+    vcu_ctrl_cmd_si_builder_.set_communication_fault(false);
+    return;
+  }
+
+  auto generate_emergency = false;
+  const auto status = cmd_rate_monitor_.report(stat, now(), generate_emergency);
+  const bool has_fault = (status != RateMonitor::Status::OK);
+
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Diagnostic CMD Rate Callback status=%d, has_fault=%d, generate_emergency=%d", status,
+    has_fault, generate_emergency);
+
+  vcu_ctrl_cmd_si_builder_.set_autonomous_enable(!has_fault);
+  vcu_ctrl_cmd_si_builder_.set_communication_fault(generate_emergency);
+}
+
+void RobioneVehicleInterface::task_20ms()
+{
+  can_frame_pub_->publish(vcu_ctrl_cmd_si_builder_.build_can_frame());
+  vcu_ctrl_cmd_si_pub_->publish(vcu_ctrl_cmd_si_builder_.to_ros_msg());
+}
+void RobioneVehicleInterface::task_50ms()
+{
+  safe_stat_ros2_heartbeat_builder_.set_ros_time_from_now();
+  can_frame_pub_->publish(safe_stat_ros2_heartbeat_builder_.build_can_frame());
 }
 };  // namespace robione_vehicle_interface
-
 #include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(robione_vehicle_interface::RobioneVehicleInterface)

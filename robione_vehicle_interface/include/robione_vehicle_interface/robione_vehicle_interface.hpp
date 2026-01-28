@@ -16,11 +16,13 @@
 #ifndef ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
 #define ROBIONE_VEHICLE_INTERFACE_CAN_RECV_HPP
 
-#include "can_interface/vcu-binutil.h"
+#include "can_interface/pc_vcu-binutil.h"
 #include "rclcpp/rclcpp.hpp"
 #include "robione_vehicle_interface/serial_port.h"
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
+#include <robione_vehicle_interface/can_msg_builder/safe_stat_ros2_heartbeat.hpp>
+#include <robione_vehicle_interface/can_msg_builder/vcu_ctrl_cmd_si.hpp>
 #include <robione_vehicle_interface/param_loader.hpp>
 #include <robione_vehicle_interface/scheduler.hpp>
 
@@ -41,6 +43,7 @@
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <robeff_msgs/msg/sick_zone.hpp>
 #include <robeff_msgs/msg/tablet_feedback.hpp>
+#include <robione_vehicle_interface_msgs/msg/vcu_ctrl_cmd_si.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
@@ -78,6 +81,13 @@ struct RateWatch
 class RateMonitor
 {
 public:
+  enum class Status : uint8_t {
+    OK = 0,
+    WARN_RATE_OUT_OF_RANGE = 1,
+    ERROR_STALE = 2,
+    ERROR_MISSING = 3,
+  };
+
   RateMonitor() = default;
 
   RateMonitor(std::initializer_list<std::pair<std::string, double>> targets)
@@ -90,6 +100,16 @@ public:
   void add_target(const std::string & name, double expected_hz)
   {
     entries_[name].expected_hz = expected_hz;
+  }
+
+  bool any_seen() const
+  {
+    for (const auto & kv : entries_) {
+      if (kv.second.watch.seen) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void update(const std::string & name, const rclcpp::Time & now_time)
@@ -108,13 +128,17 @@ public:
     w.seen = true;
   }
 
-  void report(diagnostic_updater::DiagnosticStatusWrapper & stat) const
+  Status report(
+    diagnostic_updater::DiagnosticStatusWrapper & stat, const rclcpp::Time & now_time,
+    bool & generate_emergency) const
   {
+    generate_emergency = false;
+    Status status = Status::OK;
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Command rates ok");
 
     if (entries_.empty()) {
       stat.add("rate_targets", "empty");
-      return;
+      return status;
     }
 
     for (const auto & kv : entries_) {
@@ -131,6 +155,20 @@ public:
       if (!w.seen) {
         stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "CMD missing");
         stat.addf(name, "never received (expected %.2f Hz)", expected_hz);
+        status = Status::ERROR_MISSING;
+        generate_emergency = true;
+        continue;
+      }
+
+      const double age = (now_time - w.last).seconds();
+      const double max_age = 2.0 / expected_hz;  // allow up to 2x period
+      if (age > max_age) {
+        stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "CMD stale");
+        stat.addf(name, "stale: %.3fs (timeout %.3fs)", age, max_age);
+        if (status != Status::ERROR_MISSING) {
+          status = Status::ERROR_STALE;
+        }
+        generate_emergency = true;
         continue;
       }
 
@@ -138,13 +176,20 @@ public:
       const double max_hz = expected_hz * 1.1;
 
       if (w.last_hz < min_hz || w.last_hz > max_hz) {
+        generate_emergency = true;
         stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "CMD rate out of range");
-        stat.addf(name, "%.2f Hz (expected %.2f Hz, range %.2f-%.2f Hz)", w.last_hz, expected_hz,
-          min_hz, max_hz);
+        stat.addf(
+          name, "%.2f Hz (expected %.2f Hz, range %.2f-%.2f Hz)", w.last_hz, expected_hz, min_hz,
+          max_hz);
+        if (status == Status::OK) {
+          status = Status::WARN_RATE_OUT_OF_RANGE;
+        }
       } else {
         stat.addf(name, "%.2f Hz (expected %.2f Hz)", w.last_hz, expected_hz);
       }
     }
+
+    return status;
   }
 
 private:
@@ -173,9 +218,11 @@ private:
   // Parameters
   ParamLoader params_;
   // rain mode
-  bool rain_mode_;
+  bool rain_mode_{false};
   // Scheduler
-  RateScheduler scheduler_{100};  // 100 Hz base tick
+  RateScheduler scheduler_;  // 100 Hz base tick
+                             // Timer for can frame publishing
+  rclcpp::TimerBase::SharedPtr timer_100Hz_;
 
   // rain mode subscription
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr rain_mode_sub_;
@@ -183,7 +230,11 @@ private:
   // from CAN interface
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_frame_sub_;
 
-  vcu_rx_t vcu_rx_;  // receiver
+  pc_vcu_rx_t pc_vcu_rx_;  // receiver
+
+  // Can Msg Builders
+  CanMsgBuilder::VcuCtrlCmdSi vcu_ctrl_cmd_si_builder_;
+  CanMsgBuilder::SafeStatRos2Heartbeat safe_stat_ros2_heartbeat_builder_;
 
   // robeff_msgs subscription
   rclcpp::Subscription<robeff_msgs::msg::TabletFeedback>::SharedPtr tablet_feedback_sub_;
@@ -217,6 +268,10 @@ private:
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
 
+  // Can Frame builder publishers
+  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VcuCtrlCmdSi>::SharedPtr
+    vcu_ctrl_cmd_si_pub_;
+
   // Callbacks
   void rain_mode_callback(const std_msgs::msg::Bool::SharedPtr msg);
   void control_cmd_callback(const autoware_control_msgs::msg::Control::SharedPtr msg);
@@ -231,13 +286,9 @@ private:
   void tablet_feedback_callback(const robeff_msgs::msg::TabletFeedback::ConstSharedPtr msg);
   void sick_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
 
-  // Received pointers
-  autoware_control_msgs::msg::Control::SharedPtr control_cmd_{nullptr};
-  autoware_vehicle_msgs::msg::GearCommand::SharedPtr gear_cmd_{nullptr};
-  autoware_vehicle_msgs::msg::TurnIndicatorsCommand::SharedPtr turn_indicators_cmd_{nullptr};
-  autoware_vehicle_msgs::msg::HazardLightsCommand::SharedPtr hazard_lights_cmd_{nullptr};
-  tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr vehicle_emergency_cmd_{nullptr};
-  autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr route_state_ptr_{nullptr};
+  // Init helpers
+  void init_subscribers();
+  void init_publishers();
 
   // Serial port for communicating with vehicle (configured from params)
   SerialPort serial_port_;
@@ -262,6 +313,10 @@ private:
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered = false;
   bool is_restricted_area_detect = false;
+
+  // Tasks
+  void task_20ms();
+  void task_50ms();
 };
 }  // namespace robione_vehicle_interface
 

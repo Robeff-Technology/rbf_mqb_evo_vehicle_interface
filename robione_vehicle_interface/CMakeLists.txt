@@ -15,15 +15,14 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(can_interface SHARED
-        src/can_interface/vcu.c
-        src/can_interface/vcu-binutil.c
+        src/can_interface/pc_vcu.c
+        src/can_interface/pc_vcu-binutil.c
 
 )
 
 
 ament_auto_add_library(robione_vehicle_interface SHARED
         src/robione_vehicle_interface.cpp
-        src/autoware_socketcan_bridge.cpp
         src/serial_port.cpp
 )
 
