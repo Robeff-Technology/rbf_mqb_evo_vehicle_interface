@@ -23,6 +23,8 @@
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <robione_vehicle_interface/can_msg_builder/safe_stat_ros2_heartbeat.hpp>
 #include <robione_vehicle_interface/can_msg_builder/vcu_ctrl_cmd_si.hpp>
+#include <robione_vehicle_interface/can_msg_parser/can_msg_rx_validator.hpp>
+#include <robione_vehicle_interface/can_msg_parser/vcu_stat_publisher.hpp>
 #include <robione_vehicle_interface/param_loader.hpp>
 #include <robione_vehicle_interface/scheduler.hpp>
 
@@ -235,6 +237,12 @@ private:
   // Can Msg Builders
   CanMsgBuilder::VcuCtrlCmdSi vcu_ctrl_cmd_si_builder_;
   CanMsgBuilder::SafeStatRos2Heartbeat safe_stat_ros2_heartbeat_builder_;
+
+  // CAN RX to Autoware publishers
+  CanMsgParser::VcuStatPublisher vcu_stat_publisher_;
+
+  // CAN RX validators
+  std::unordered_map<uint32_t, CanMsgParser::AliveCrcValidator> rx_validators_;
 
   // robeff_msgs subscription
   rclcpp::Subscription<robeff_msgs::msg::TabletFeedback>::SharedPtr tablet_feedback_sub_;

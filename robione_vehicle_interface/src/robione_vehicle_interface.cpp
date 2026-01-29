@@ -28,6 +28,19 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   init_subscribers();
   init_publishers();
 
+  vcu_stat_publisher_.configure(
+    *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
+    turn_indicators_status_pub_, hazard_lights_status_pub_);
+
+  rx_validators_.emplace(
+    VCU_STAT_MOTION_SI_CANID,
+    CanMsgParser::AliveCrcValidator(
+      VCU_STAT_MOTION_SI_CANID, "VCU_STAT_MOTION_SI", VCU_STAT_MOTION_SI_DLC));
+  rx_validators_.emplace(
+    VCU_STAT_VEHICLE_STATE_CANID,
+    CanMsgParser::AliveCrcValidator(
+      VCU_STAT_VEHICLE_STATE_CANID, "VCU_STAT_VEHICLE_STATE", VCU_STAT_VEHICLE_STATE_DLC));
+
   if (!openSerialFromConfig()) {
     // Try to open serial port from parameters/config
     RCLCPP_WARN(this->get_logger(), "Could not open serial port from config");
@@ -144,12 +157,33 @@ bool RobioneVehicleInterface::openSerial(const std::string & port, unsigned int 
 
 void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
-  if (pc_vcu_Receive(&(RobioneVehicleInterface::pc_vcu_rx_), msg->data.data(), msg->id, msg->dlc)) {
+  auto validator_it = rx_validators_.find(msg->id);
+  if (validator_it != rx_validators_.end()) {
+    const auto result = validator_it->second.validate(*msg);
+    if (!result.ok()) {
+      const auto reason = validator_it->second.format_message(result);
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *this->get_clock(), 2000,
+        "CAN RX %s invalid (0x%X): %s", validator_it->second.name().c_str(), msg->id,
+        reason.c_str());
+      return;
+    }
+  }
+
+  const auto rec_id =
+    pc_vcu_Receive(&(RobioneVehicleInterface::pc_vcu_rx_), msg->data.data(), msg->id, msg->dlc);
+  if (rec_id != 0U) {
     // Successfully parsed the CAN frame
     auto it = can_watchdog_.find(msg->id);
     if (it != can_watchdog_.end()) {
       it->second.last_rx = now();
       it->second.seen = true;
+    }
+
+    if (rec_id == VCU_STAT_MOTION_SI_CANID) {
+      vcu_stat_publisher_.publish_motion(pc_vcu_rx_.VCU_STAT_MOTION_SI);
+    } else if (rec_id == VCU_STAT_VEHICLE_STATE_CANID) {
+      vcu_stat_publisher_.publish_vehicle_state(pc_vcu_rx_.VCU_STAT_VEHICLE_STATE);
     }
   }
 
@@ -296,6 +330,22 @@ void RobioneVehicleInterface::diagnostic_can_callback(
 
   check_id(VCU_STAT_MOTION_SI_CANID, "VCU_STAT_MOTION", timeout_s_fast);
   check_id(VCU_STAT_VEHICLE_STATE_CANID, "VCU_STAT_VEHICLE_STATE", timeout_s_fast);
+
+  for (const auto & kv : rx_validators_) {
+    const auto & validator = kv.second;
+    const auto crc_errors = validator.crc_error_count();
+    const auto alive_errors = validator.alive_error_count();
+    const auto dlc_errors = validator.dlc_error_count();
+
+    if (crc_errors > 0U || alive_errors > 0U || dlc_errors > 0U) {
+      stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "CAN RX errors");
+    }
+
+    const std::string label = validator.name() + std::string("_rx");
+    stat.addf(
+      label.c_str(), "frames=%u crc_err=%u alive_err=%u dlc_err=%u",
+      validator.frame_count(), crc_errors, alive_errors, dlc_errors);
+  }
 }
 
 void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
@@ -306,18 +356,13 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   RCLCPP_INFO(this->get_logger(), "Diagnostic CMD Rate Callback any_seen=%d", any_seen);
   if (!any_seen) {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
-    vcu_ctrl_cmd_si_builder_.set_communication_fault(false);
+    vcu_ctrl_cmd_si_builder_.set_emergency_active(false);
     return;
   }
 
   auto generate_emergency = false;
   const auto status = cmd_rate_monitor_.report(stat, now(), generate_emergency);
   const bool has_fault = (status != RateMonitor::Status::OK);
-
-  RCLCPP_INFO(
-    this->get_logger(),
-    "Diagnostic CMD Rate Callback status=%d, has_fault=%d, generate_emergency=%d", status,
-    has_fault, generate_emergency);
 
   vcu_ctrl_cmd_si_builder_.set_autonomous_enable(!has_fault);
   vcu_ctrl_cmd_si_builder_.set_communication_fault(generate_emergency);

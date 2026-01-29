@@ -144,6 +144,6 @@ protected:
 
 private:
   VCU_CTRL_CMD_SI_t msg_;
-  bool communication_fault_{true};
+  bool communication_fault_{false};
 };
 }  // namespace CanMsgBuilder

@@ -1,0 +1,121 @@
+#pragma once
+
+#include "can_interface/pc_vcu.h"
+
+#include <rclcpp/rclcpp.hpp>
+
+#include <autoware_vehicle_msgs/msg/control_mode_report.hpp>
+#include <autoware_vehicle_msgs/msg/gear_report.hpp>
+#include <autoware_vehicle_msgs/msg/hazard_lights_report.hpp>
+#include <autoware_vehicle_msgs/msg/steering_report.hpp>
+#include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
+#include <autoware_vehicle_msgs/msg/velocity_report.hpp>
+
+namespace CanMsgParser
+{
+class VcuStatPublisher
+{
+public:
+  void configure(
+    rclcpp::Node & node,
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::ControlModeReport>::SharedPtr &
+      control_mode_pub,
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::VelocityReport>::SharedPtr & velocity_pub,
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::SteeringReport>::SharedPtr & steering_pub,
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr & gear_pub,
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr & turn_pub,
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr & hazard_pub)
+  {
+    clock_ = node.get_clock();
+    control_mode_pub_ = control_mode_pub;
+    velocity_pub_ = velocity_pub;
+    steering_pub_ = steering_pub;
+    gear_pub_ = gear_pub;
+    turn_pub_ = turn_pub;
+    hazard_pub_ = hazard_pub;
+  }
+
+  void publish_motion(const VCU_STAT_MOTION_SI_t & stat) const
+  {
+    if (!velocity_pub_ || !steering_pub_) {
+      return;
+    }
+
+    const auto stamp = clock_ ? clock_->now() : rclcpp::Clock().now();
+
+    autoware_vehicle_msgs::msg::VelocityReport velocity_report;
+    velocity_report.header.stamp = stamp;
+    velocity_report.longitudinal_velocity = static_cast<float>(stat.VehicleSpeedMS_Act_phys);
+    velocity_report.lateral_velocity = 0.0F;
+    velocity_report.heading_rate = 0.0F;
+    velocity_pub_->publish(velocity_report);
+
+    autoware_vehicle_msgs::msg::SteeringReport steering_report;
+    steering_report.stamp = stamp;
+    steering_report.steering_tire_angle = static_cast<float>(stat.TireAngleRad_Act_phys);
+    steering_pub_->publish(steering_report);
+  }
+
+  void publish_vehicle_state(const VCU_STAT_VEHICLE_STATE_t & stat) const
+  {
+    if (!control_mode_pub_ || !gear_pub_ || !turn_pub_ || !hazard_pub_) {
+      return;
+    }
+
+    const auto stamp = clock_ ? clock_->now() : rclcpp::Clock().now();
+
+    autoware_vehicle_msgs::msg::ControlModeReport control_mode_report;
+    control_mode_report.stamp = stamp;
+    control_mode_report.mode = map_control_mode(stat.ControlMode);
+    control_mode_pub_->publish(control_mode_report);
+
+    autoware_vehicle_msgs::msg::GearReport gear_report;
+    gear_report.stamp = stamp;
+    gear_report.report = stat.GearAct;
+    gear_pub_->publish(gear_report);
+
+    autoware_vehicle_msgs::msg::TurnIndicatorsReport turn_report;
+    turn_report.stamp = stamp;
+    if (stat.TurnLeft_Stat) {
+      turn_report.report = autoware_vehicle_msgs::msg::TurnIndicatorsReport::ENABLE_LEFT;
+    } else if (stat.TurnRight_Stat) {
+      turn_report.report = autoware_vehicle_msgs::msg::TurnIndicatorsReport::ENABLE_RIGHT;
+    } else {
+      turn_report.report = autoware_vehicle_msgs::msg::TurnIndicatorsReport::DISABLE;
+    }
+    turn_pub_->publish(turn_report);
+
+    autoware_vehicle_msgs::msg::HazardLightsReport hazard_report;
+    hazard_report.stamp = stamp;
+    hazard_report.report = stat.Hazard_Stat
+                             ? autoware_vehicle_msgs::msg::HazardLightsReport::ENABLE
+                             : autoware_vehicle_msgs::msg::HazardLightsReport::DISABLE;
+    hazard_pub_->publish(hazard_report);
+  }
+
+private:
+  static uint8_t map_control_mode(uint8_t control_mode)
+  {
+    switch (control_mode) {
+      case 1U:
+        return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
+      case 2U:
+        return autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
+      case 0U:
+      case 3U:
+      case 4U:
+        return autoware_vehicle_msgs::msg::ControlModeReport::DISENGAGED;
+      default:
+        return autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
+    }
+  }
+
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Publisher<autoware_vehicle_msgs::msg::ControlModeReport>::SharedPtr control_mode_pub_;
+  rclcpp::Publisher<autoware_vehicle_msgs::msg::VelocityReport>::SharedPtr velocity_pub_;
+  rclcpp::Publisher<autoware_vehicle_msgs::msg::SteeringReport>::SharedPtr steering_pub_;
+  rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr gear_pub_;
+  rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr turn_pub_;
+  rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr hazard_pub_;
+};
+}  // namespace CanMsgParser
