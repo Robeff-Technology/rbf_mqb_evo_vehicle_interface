@@ -11,12 +11,12 @@
 namespace
 {
 can_msgs::msg::Frame make_motion_frame(
-  int16_t tire_angle_raw, int16_t speed_raw, uint8_t alive, bool corrupt_crc)
+  float tire_angle_raw, float speed_raw, uint8_t alive, bool corrupt_crc)
 {
   VCU_STAT_MOTION_SI_t msg{};
-  msg.TireAngleRad_Act_ro = tire_angle_raw;
-  msg.VehicleSpeedMS_Act_ro = speed_raw;
-  msg.Reserved = 0U;
+  msg.TireAngleRad_Act_phys = tire_angle_raw;
+  msg.VehicleSpeedMS_Act_phys = speed_raw;
+  msg.SteerAngleDeg_Act = 225U;
   msg.AliveCounter = alive;
   msg.CRC8 = 0U;
 
@@ -98,11 +98,12 @@ public:
     publisher_ = create_publisher<can_msgs::msg::Frame>(publish_topic_, rclcpp::QoS(10));
 
     const auto period = std::chrono::duration<double>(1.0 / std::max(1.0, rate));
-    motion_timer_ = create_wall_timer(period, std::bind(&CanRxTestPublisher::on_motion_timer, this));
+    motion_timer_ =
+      create_wall_timer(period, std::bind(&CanRxTestPublisher::on_motion_timer, this));
 
     const auto state_period = std::chrono::duration<double>(1.0 / std::max(1.0, state_rate));
-    state_timer_ = create_wall_timer(
-      state_period, std::bind(&CanRxTestPublisher::on_state_timer, this));
+    state_timer_ =
+      create_wall_timer(state_period, std::bind(&CanRxTestPublisher::on_state_timer, this));
   }
 
 private:
@@ -111,13 +112,12 @@ private:
     const auto alive = alive_counter_motion_;
     const bool corrupt_crc = !good_crc_;
 
-    auto motion_frame = make_motion_frame(100, 200, alive, corrupt_crc);
+    auto motion_frame = make_motion_frame(-10.232f, -20.522f, alive, corrupt_crc);
     motion_frame.header.stamp = now();
     motion_frame.header.frame_id = "can";
     publisher_->publish(motion_frame);
 
-    alive_counter_motion_ =
-      static_cast<uint8_t>(alive_counter_motion_ + (good_alive_ ? 1U : 2U));
+    alive_counter_motion_ = static_cast<uint8_t>(alive_counter_motion_ + (good_alive_ ? 1U : 2U));
   }
 
   void on_state_timer()
@@ -130,8 +130,7 @@ private:
     state_frame.header.frame_id = "can";
     publisher_->publish(state_frame);
 
-    alive_counter_state_ =
-      static_cast<uint8_t>(alive_counter_state_ + (good_alive_ ? 1U : 2U));
+    alive_counter_state_ = static_cast<uint8_t>(alive_counter_state_ + (good_alive_ ? 1U : 2U));
   }
 
   std::string publish_topic_;

@@ -49,7 +49,7 @@
   3. In unpack function '_phys' signal will be written by '_ro' signal.
   User have to use '_phys' signal to read physical value. */
 
- #define PC_VCU_USE_SIGFLOAT 
+#define PC_VCU_USE_SIGFLOAT
 
 
 /* ------------------------------------------------------------------------- *

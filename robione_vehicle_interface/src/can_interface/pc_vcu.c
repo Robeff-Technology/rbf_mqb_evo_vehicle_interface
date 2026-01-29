@@ -59,7 +59,7 @@ uint32_t Unpack_VCU_STAT_MOTION_SI_pc_vcu(VCU_STAT_MOTION_SI_t* _m, const uint8_
   _m->VehicleSpeedMS_Act_phys = (sigfloat_t)(PC_VCU_VehicleSpeedMS_Act_ro_fromS(_m->VehicleSpeedMS_Act_ro));
 #endif // PC_VCU_USE_SIGFLOAT
 
-  _m->Reserved = (uint16_t) ( ((_d[5] & (0xFFU)) << 8U) | (_d[4] & (0xFFU)) );
+  _m->SteerAngleDeg_Act = (int16_t) __ext_sig__(( ((_d[5] & (0xFFU)) << 8U) | (_d[4] & (0xFFU)) ), 16);
   _m->AliveCounter = (uint8_t) ( (_d[6] & (0xFFU)) );
   _m->CRC8 = (uint8_t) ( (_d[7] & (0xFFU)) );
 
@@ -89,8 +89,8 @@ uint32_t Pack_VCU_STAT_MOTION_SI_pc_vcu(VCU_STAT_MOTION_SI_t* _m, __CoderDbcCanF
   cframe->Data[1] |= (uint8_t) ( ((_m->TireAngleRad_Act_ro >> 8U) & (0xFFU)) );
   cframe->Data[2] |= (uint8_t) ( (_m->VehicleSpeedMS_Act_ro & (0xFFU)) );
   cframe->Data[3] |= (uint8_t) ( ((_m->VehicleSpeedMS_Act_ro >> 8U) & (0xFFU)) );
-  cframe->Data[4] |= (uint8_t) ( (_m->Reserved & (0xFFU)) );
-  cframe->Data[5] |= (uint8_t) ( ((_m->Reserved >> 8U) & (0xFFU)) );
+  cframe->Data[4] |= (uint8_t) ( (_m->SteerAngleDeg_Act & (0xFFU)) );
+  cframe->Data[5] |= (uint8_t) ( ((_m->SteerAngleDeg_Act >> 8U) & (0xFFU)) );
   cframe->Data[6] |= (uint8_t) ( (_m->AliveCounter & (0xFFU)) );
   cframe->Data[7] |= (uint8_t) ( (_m->CRC8 & (0xFFU)) );
 
@@ -115,8 +115,8 @@ uint32_t Pack_VCU_STAT_MOTION_SI_pc_vcu(VCU_STAT_MOTION_SI_t* _m, uint8_t* _d, u
   _d[1] |= (uint8_t) ( ((_m->TireAngleRad_Act_ro >> 8U) & (0xFFU)) );
   _d[2] |= (uint8_t) ( (_m->VehicleSpeedMS_Act_ro & (0xFFU)) );
   _d[3] |= (uint8_t) ( ((_m->VehicleSpeedMS_Act_ro >> 8U) & (0xFFU)) );
-  _d[4] |= (uint8_t) ( (_m->Reserved & (0xFFU)) );
-  _d[5] |= (uint8_t) ( ((_m->Reserved >> 8U) & (0xFFU)) );
+  _d[4] |= (uint8_t) ( (_m->SteerAngleDeg_Act & (0xFFU)) );
+  _d[5] |= (uint8_t) ( ((_m->SteerAngleDeg_Act >> 8U) & (0xFFU)) );
   _d[6] |= (uint8_t) ( (_m->AliveCounter & (0xFFU)) );
   _d[7] |= (uint8_t) ( (_m->CRC8 & (0xFFU)) );
 
@@ -290,9 +290,9 @@ uint32_t Pack_VCU_CTRL_CMD_SI_pc_vcu(VCU_CTRL_CMD_SI_t* _m, uint8_t* _d, uint8_t
 uint32_t Unpack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(SAFE_STAT_ROS2_HEARTBEAT_t* _m, const uint8_t* _d, uint8_t dlc_)
 {
   (void)dlc_;
-  _m->ROS_Time_ms = (uint64_t) ( ((uint64_t)(_d[5] & (0xFFU)) << 40U) | ((uint64_t)(_d[4] & (0xFFU)) << 32U) | ((_d[3] & (0xFFU)) << 24U) | ((_d[2] & (0xFFU)) << 16U) | ((_d[1] & (0xFFU)) << 8U) | (_d[0] & (0xFFU)) );
-  _m->AliveCounter = (uint8_t) ( (_d[0] & (0xFFU)) );
   _m->CRC8 = (uint8_t) ( (_d[0] & (0xFFU)) );
+  _m->AliveCounter = (uint8_t) ( (_d[0] & (0xFFU)) );
+  _m->ROS_Time_ms = (uint64_t) ( ((uint64_t)(_d[5] & (0xFFU)) << 40U) | ((uint64_t)(_d[4] & (0xFFU)) << 32U) | ((_d[3] & (0xFFU)) << 24U) | ((_d[2] & (0xFFU)) << 16U) | ((_d[1] & (0xFFU)) << 8U) | (_d[0] & (0xFFU)) );
 
 #ifdef PC_VCU_USE_DIAG_MONITORS
   _m->mon1.dlc_error = (dlc_ < SAFE_STAT_ROS2_HEARTBEAT_DLC);
@@ -311,7 +311,7 @@ uint32_t Pack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(SAFE_STAT_ROS2_HEARTBEAT_t* _m, __
 {
   uint8_t i; for (i = 0u; i < PC_VCU_VALIDATE_DLC(SAFE_STAT_ROS2_HEARTBEAT_DLC); cframe->Data[i++] = PC_VCU_INITIAL_BYTE_VALUE);
 
-  cframe->Data[0] |= (uint8_t) ( (_m->ROS_Time_ms & (0xFFU)) | (_m->AliveCounter & (0xFFU)) | (_m->CRC8 & (0xFFU)) );
+  cframe->Data[0] |= (uint8_t) ( (_m->CRC8 & (0xFFU)) | (_m->AliveCounter & (0xFFU)) | (_m->ROS_Time_ms & (0xFFU)) );
   cframe->Data[1] |= (uint8_t) ( ((_m->ROS_Time_ms >> 8U) & (0xFFU)) );
   cframe->Data[2] |= (uint8_t) ( ((_m->ROS_Time_ms >> 16U) & (0xFFU)) );
   cframe->Data[3] |= (uint8_t) ( ((_m->ROS_Time_ms >> 24U) & (0xFFU)) );
@@ -330,7 +330,7 @@ uint32_t Pack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(SAFE_STAT_ROS2_HEARTBEAT_t* _m, ui
 {
   uint8_t i; for (i = 0u; i < PC_VCU_VALIDATE_DLC(SAFE_STAT_ROS2_HEARTBEAT_DLC); _d[i++] = PC_VCU_INITIAL_BYTE_VALUE);
 
-  _d[0] |= (uint8_t) ( (_m->ROS_Time_ms & (0xFFU)) | (_m->AliveCounter & (0xFFU)) | (_m->CRC8 & (0xFFU)) );
+  _d[0] |= (uint8_t) ( (_m->CRC8 & (0xFFU)) | (_m->AliveCounter & (0xFFU)) | (_m->ROS_Time_ms & (0xFFU)) );
   _d[1] |= (uint8_t) ( ((_m->ROS_Time_ms >> 8U) & (0xFFU)) );
   _d[2] |= (uint8_t) ( ((_m->ROS_Time_ms >> 16U) & (0xFFU)) );
   _d[3] |= (uint8_t) ( ((_m->ROS_Time_ms >> 24U) & (0xFFU)) );

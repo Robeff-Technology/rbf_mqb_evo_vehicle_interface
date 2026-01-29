@@ -33,7 +33,7 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
 
   vcu_stat_publisher_.configure(
     *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
-    turn_indicators_status_pub_, hazard_lights_status_pub_);
+    turn_indicators_status_pub_, hazard_lights_status_pub_, steering_wheel_status_pub_);
 
   rx_validators_.emplace(
     VCU_STAT_MOTION_SI_CANID,
@@ -353,7 +353,7 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   }
 
   auto generate_emergency = false;
-  const auto status = cmd_rate_monitor_.report(stat, now(), generate_emergency);
+  const auto status = cmd_rate_monitor_.report(stat, now(), generate_emergency, true, true);
   const bool has_fault = (status != RateMonitor::Status::OK);
 
   vcu_ctrl_cmd_si_builder_.set_autonomous_enable(!has_fault);

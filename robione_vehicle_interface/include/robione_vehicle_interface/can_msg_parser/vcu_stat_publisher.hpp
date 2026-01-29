@@ -10,6 +10,7 @@
 #include <autoware_vehicle_msgs/msg/steering_report.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
+#include <tier4_vehicle_msgs/msg/steering_wheel_status_stamped.hpp>
 
 namespace CanMsgParser
 {
@@ -24,7 +25,9 @@ public:
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::SteeringReport>::SharedPtr & steering_pub,
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr & gear_pub,
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr & turn_pub,
-    const rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr & hazard_pub)
+    const rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr & hazard_pub,
+    const rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr &
+      steer_st)
   {
     clock_ = node.get_clock();
     control_mode_pub_ = control_mode_pub;
@@ -33,11 +36,12 @@ public:
     gear_pub_ = gear_pub;
     turn_pub_ = turn_pub;
     hazard_pub_ = hazard_pub;
+    steer_st_ = steer_st;
   }
 
   void publish_motion(const VCU_STAT_MOTION_SI_t & stat) const
   {
-    if (!velocity_pub_ || !steering_pub_) {
+    if (!velocity_pub_ || !steering_pub_ || !steer_st_) {
       return;
     }
 
@@ -54,6 +58,11 @@ public:
     steering_report.stamp = stamp;
     steering_report.steering_tire_angle = static_cast<float>(stat.TireAngleRad_Act_phys);
     steering_pub_->publish(steering_report);
+
+    tier4_vehicle_msgs::msg::SteeringWheelStatusStamped steer_wheel_status;
+    steer_wheel_status.stamp = stamp;
+    steer_wheel_status.data = static_cast<float>(stat.SteerAngleDeg_Act);
+    steer_st_->publish(steer_wheel_status);
   }
 
   void publish_vehicle_state(const VCU_STAT_VEHICLE_STATE_t & stat) const
@@ -117,5 +126,6 @@ private:
   rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr gear_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr turn_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr hazard_pub_;
+  rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr steer_st_;
 };
 }  // namespace CanMsgParser

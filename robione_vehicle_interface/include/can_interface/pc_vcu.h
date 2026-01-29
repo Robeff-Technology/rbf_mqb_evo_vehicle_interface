@@ -42,7 +42,6 @@ extern "C" {
 #endif
 
 
-// 50 Hz
 // def @VCU_STAT_MOTION_SI CAN Message (502203408 0x1def0410)
 #define VCU_STAT_MOTION_SI_IDE (1U)
 #define VCU_STAT_MOTION_SI_DLC (8U)
@@ -72,11 +71,12 @@ typedef struct
   sigfloat_t VehicleSpeedMS_Act_phys;
 #endif // PC_VCU_USE_SIGFLOAT
 
-  uint16_t Reserved;                         //      Bits=16
+  // Measured steer angle
+  int16_t SteerAngleDeg_Act;                 //  [-] Bits=16 Unit:'degree'
 
-  uint8_t AliveCounter;                      //      Bits= 8
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
 
-  uint8_t CRC8;                              //      Bits= 8
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
 
 #else
 
@@ -92,11 +92,12 @@ typedef struct
   sigfloat_t VehicleSpeedMS_Act_phys;
 #endif // PC_VCU_USE_SIGFLOAT
 
-  uint16_t Reserved;                         //      Bits=16
+  // Measured steer angle
+  int16_t SteerAngleDeg_Act;                 //  [-] Bits=16 Unit:'degree'
 
-  uint8_t AliveCounter;                      //      Bits= 8
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
 
-  uint8_t CRC8;                              //      Bits= 8
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
 
 #endif // PC_VCU_USE_BITS_SIGNAL
 
@@ -108,7 +109,6 @@ typedef struct
 
 } VCU_STAT_MOTION_SI_t;
 
-// 10 Hz
 // def @VCU_STAT_VEHICLE_STATE CAN Message (502203409 0x1def0411)
 #define VCU_STAT_VEHICLE_STATE_IDE (1U)
 #define VCU_STAT_VEHICLE_STATE_DLC (8U)
@@ -146,31 +146,31 @@ typedef struct
   //  2 : "DRIVE"
   //  20 : "REVERSE"
   //  22 : "PARK"
-  uint8_t GearAct : 4;                       //      Bits= 4
+  uint8_t GearAct : 4;                       //      Bits= 4 Unit:'-'
 
-  uint8_t Reserved : 4;                      //      Bits= 4
+  uint8_t Reserved : 4;                      //      Bits= 4 Unit:'-'
 
-  uint8_t TurnLeft_Stat : 1;                 //      Bits= 1
+  uint8_t TurnLeft_Stat : 1;                 //      Bits= 1 Unit:'-'
 
-  uint8_t TurnRight_Stat : 1;                //      Bits= 1
+  uint8_t TurnRight_Stat : 1;                //      Bits= 1 Unit:'-'
 
-  uint8_t Hazard_Stat : 1;                   //      Bits= 1
+  uint8_t Hazard_Stat : 1;                   //      Bits= 1 Unit:'-'
 
-  uint8_t Horn_Stat : 1;                     //      Bits= 1
+  uint8_t Horn_Stat : 1;                     //      Bits= 1 Unit:'-'
 
-  uint8_t Reserved_1 : 4;                    //      Bits= 4
+  uint8_t Reserved_1 : 4;                    //      Bits= 4 Unit:'-'
 
-  uint8_t ControlMode;                       //      Bits= 8
+  uint8_t ControlMode;                       //      Bits= 8 Unit:'-'
 
-  uint8_t SafetyState;                       //      Bits= 8
+  uint8_t SafetyState;                       //      Bits= 8 Unit:'-'
 
-  uint8_t BatterySoC;                        //      Bits= 8
+  uint8_t BatterySoC;                        //      Bits= 8 Unit:'-'
 
-  uint8_t FaultSummary;                      //      Bits= 8
+  uint8_t FaultSummary;                      //      Bits= 8 Unit:'-'
 
-  uint8_t AliveCounter;                      //      Bits= 8
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
 
-  uint8_t CRC8;                              //      Bits= 8
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
 
 #else
 
@@ -179,31 +179,31 @@ typedef struct
   //  2 : "DRIVE"
   //  20 : "REVERSE"
   //  22 : "PARK"
-  uint8_t GearAct;                           //      Bits= 4
+  uint8_t GearAct;                           //      Bits= 4 Unit:'-'
 
-  uint8_t Reserved;                          //      Bits= 4
+  uint8_t Reserved;                          //      Bits= 4 Unit:'-'
 
-  uint8_t TurnLeft_Stat;                     //      Bits= 1
+  uint8_t TurnLeft_Stat;                     //      Bits= 1 Unit:'-'
 
-  uint8_t TurnRight_Stat;                    //      Bits= 1
+  uint8_t TurnRight_Stat;                    //      Bits= 1 Unit:'-'
 
-  uint8_t Hazard_Stat;                       //      Bits= 1
+  uint8_t Hazard_Stat;                       //      Bits= 1 Unit:'-'
 
-  uint8_t Horn_Stat;                         //      Bits= 1
+  uint8_t Horn_Stat;                         //      Bits= 1 Unit:'-'
 
-  uint8_t Reserved_1;                        //      Bits= 4
+  uint8_t Reserved_1;                        //      Bits= 4 Unit:'-'
 
-  uint8_t ControlMode;                       //      Bits= 8
+  uint8_t ControlMode;                       //      Bits= 8 Unit:'-'
 
-  uint8_t SafetyState;                       //      Bits= 8
+  uint8_t SafetyState;                       //      Bits= 8 Unit:'-'
 
-  uint8_t BatterySoC;                        //      Bits= 8
+  uint8_t BatterySoC;                        //      Bits= 8 Unit:'-'
 
-  uint8_t FaultSummary;                      //      Bits= 8
+  uint8_t FaultSummary;                      //      Bits= 8 Unit:'-'
 
-  uint8_t AliveCounter;                      //      Bits= 8
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
 
-  uint8_t CRC8;                              //      Bits= 8
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
 
 #endif // PC_VCU_USE_BITS_SIGNAL
 
@@ -215,12 +215,10 @@ typedef struct
 
 } VCU_STAT_VEHICLE_STATE_t;
 
-// 50 Hz
 // def @VCU_CTRL_CMD_SI CAN Message (502247424 0x1defb000)
 #define VCU_CTRL_CMD_SI_IDE (1U)
 #define VCU_CTRL_CMD_SI_DLC (8U)
 #define VCU_CTRL_CMD_SI_CANID (0x1defb000U)
-#define VCU_CTRL_CMD_SI_CYC (20U)
 // signal: @TireAngleRad_Cmd_ro
 #define PC_VCU_TireAngleRad_Cmd_ro_CovFactor (0.001)
 #define PC_VCU_TireAngleRad_Cmd_ro_toS(x) ( (int16_t) (((x) - (0.0)) / (0.001)) )
@@ -272,13 +270,13 @@ typedef struct
 #endif // PC_VCU_USE_SIGFLOAT
 
   // Enables autonomous motion commands
-  uint8_t AutonomousEnable : 1;              //      Bits= 1
+  uint8_t AutonomousEnable : 1;              //      Bits= 1 Unit:'-'
 
   // Emergency stop request (highest priority)
-  uint8_t EmergencyActive : 1;               //      Bits= 1
+  uint8_t EmergencyActive : 1;               //      Bits= 1 Unit:'-'
 
   // 1 = disable internal ECU safety checks
-  uint8_t SafetyDisable : 1;                 //      Bits= 1
+  uint8_t SafetyDisable : 1;                 //      Bits= 1 Unit:'-'
 
   // Gear request code (expanded field)
   //  0 : "NONE"
@@ -286,28 +284,28 @@ typedef struct
   //  2 : "DRIVE"
   //  20 : "REVERSE"
   //  22 : "PARK"
-  uint8_t GearReq : 5;                       //      Bits= 5
+  uint8_t GearReq : 5;                       //      Bits= 5 Unit:'-'
 
   // Left turn indicator request
-  uint8_t TurnLeft : 1;                      //      Bits= 1
+  uint8_t TurnLeft : 1;                      //      Bits= 1 Unit:'-'
 
   // Right turn indicator request
-  uint8_t TurnRight : 1;                     //      Bits= 1
+  uint8_t TurnRight : 1;                     //      Bits= 1 Unit:'-'
 
   // Hazard lights (overrides turn signals)
-  uint8_t Hazard : 1;                        //      Bits= 1
+  uint8_t Hazard : 1;                        //      Bits= 1 Unit:'-'
 
   // Horn command (momentary)
-  uint8_t Horn : 1;                          //      Bits= 1
+  uint8_t Horn : 1;                          //      Bits= 1 Unit:'-'
 
   // Must be sent as 0
-  uint8_t Reserved : 4;                      //      Bits= 4
+  uint8_t Reserved : 4;                      //      Bits= 4 Unit:'-'
 
   // Rolling counter (0?255)
-  uint8_t AliveCounter;                      //      Bits= 8
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
 
   // CRC-8 AUTOSAR over Byte0?Byte6
-  uint8_t CRC8;                              //      Bits= 8
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
 
 #else
 
@@ -326,13 +324,13 @@ typedef struct
 #endif // PC_VCU_USE_SIGFLOAT
 
   // Enables autonomous motion commands
-  uint8_t AutonomousEnable;                  //      Bits= 1
+  uint8_t AutonomousEnable;                  //      Bits= 1 Unit:'-'
 
   // Emergency stop request (highest priority)
-  uint8_t EmergencyActive;                   //      Bits= 1
+  uint8_t EmergencyActive;                   //      Bits= 1 Unit:'-'
 
   // 1 = disable internal ECU safety checks
-  uint8_t SafetyDisable;                     //      Bits= 1
+  uint8_t SafetyDisable;                     //      Bits= 1 Unit:'-'
 
   // Gear request code (expanded field)
   //  0 : "NONE"
@@ -340,28 +338,28 @@ typedef struct
   //  2 : "DRIVE"
   //  20 : "REVERSE"
   //  22 : "PARK"
-  uint8_t GearReq;                           //      Bits= 5
+  uint8_t GearReq;                           //      Bits= 5 Unit:'-'
 
   // Left turn indicator request
-  uint8_t TurnLeft;                          //      Bits= 1
+  uint8_t TurnLeft;                          //      Bits= 1 Unit:'-'
 
   // Right turn indicator request
-  uint8_t TurnRight;                         //      Bits= 1
+  uint8_t TurnRight;                         //      Bits= 1 Unit:'-'
 
   // Hazard lights (overrides turn signals)
-  uint8_t Hazard;                            //      Bits= 1
+  uint8_t Hazard;                            //      Bits= 1 Unit:'-'
 
   // Horn command (momentary)
-  uint8_t Horn;                              //      Bits= 1
+  uint8_t Horn;                              //      Bits= 1 Unit:'-'
 
   // Must be sent as 0
-  uint8_t Reserved;                          //      Bits= 4
+  uint8_t Reserved;                          //      Bits= 4 Unit:'-'
 
   // Rolling counter (0?255)
-  uint8_t AliveCounter;                      //      Bits= 8
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
 
   // CRC-8 AUTOSAR over Byte0?Byte6
-  uint8_t CRC8;                              //      Bits= 8
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
 
 #endif // PC_VCU_USE_BITS_SIGNAL
 
@@ -373,7 +371,6 @@ typedef struct
 
 } VCU_CTRL_CMD_SI_t;
 
-// 20 Hz
 // def @SAFE_STAT_ROS2_HEARTBEAT CAN Message (502247425 0x1defb001)
 #define SAFE_STAT_ROS2_HEARTBEAT_IDE (1U)
 #define SAFE_STAT_ROS2_HEARTBEAT_DLC (8U)
@@ -383,21 +380,21 @@ typedef struct
 {
 #ifdef PC_VCU_USE_BITS_SIGNAL
 
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
+
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
+
   // ROS 2 time in milliseconds
   uint64_t ROS_Time_ms;                      //      Bits=48 Unit:'ms'
-
-  uint8_t AliveCounter;                      //      Bits= 8
-
-  uint8_t CRC8;                              //      Bits= 8
 
 #else
 
+  uint8_t CRC8;                              //      Bits= 8 Unit:'-'
+
+  uint8_t AliveCounter;                      //      Bits= 8 Unit:'-'
+
   // ROS 2 time in milliseconds
   uint64_t ROS_Time_ms;                      //      Bits=48 Unit:'ms'
-
-  uint8_t AliveCounter;                      //      Bits= 8
-
-  uint8_t CRC8;                              //      Bits= 8
 
 #endif // PC_VCU_USE_BITS_SIGNAL
 

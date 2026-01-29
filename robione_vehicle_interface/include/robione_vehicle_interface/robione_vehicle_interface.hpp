@@ -132,7 +132,7 @@ public:
 
   Status report(
     diagnostic_updater::DiagnosticStatusWrapper & stat, const rclcpp::Time & now_time,
-    bool & generate_emergency, bool set_summary = true) const
+    bool & generate_emergency, bool set_summary = true, bool skip_disabled = false) const
   {
     generate_emergency = false;
     Status status = Status::OK;
@@ -152,7 +152,9 @@ public:
       const double expected_hz = entry.expected_hz;
 
       if (expected_hz <= 0.0) {
-        stat.addf(name, "disabled (expected %.2f Hz)", expected_hz);
+        if (!skip_disabled) {
+          stat.addf(name, "disabled (expected %.2f Hz)", expected_hz);
+        }
         continue;
       }
 
