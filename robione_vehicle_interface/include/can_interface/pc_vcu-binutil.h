@@ -7,8 +7,8 @@ extern "C" {
 #endif
 
 #include "dbccodeconf.h"
-
 #include "pc_vcu.h"
+
 
 typedef struct
 {
@@ -20,13 +20,13 @@ typedef struct
 
 // There is no any TX mapped massage.
 
-uint32_t pc_vcu_Receive(pc_vcu_rx_t* m, const uint8_t* d, uint32_t msgid, uint8_t dlc);
+uint32_t pc_vcu_Receive(pc_vcu_rx_t * m, const uint8_t * d, uint32_t msgid, uint8_t dlc);
 
 #ifdef __DEF_PC_VCU__
 
 extern pc_vcu_rx_t pc_vcu_rx;
 
-#endif // __DEF_PC_VCU__
+#endif  // __DEF_PC_VCU__
 
 #ifdef __cplusplus
 }
