@@ -327,6 +327,10 @@ private:
   bool is_arrived_triggered = false;
   bool is_restricted_area_detect = false;
 
+  rclcpp::Duration horn_duration_{0, 0};
+  rclcpp::Time horn_end_time_{0, 0, RCL_ROS_TIME};
+  bool horn_active_{false};
+
   // Tasks
   void task_20ms();
   void task_50ms();

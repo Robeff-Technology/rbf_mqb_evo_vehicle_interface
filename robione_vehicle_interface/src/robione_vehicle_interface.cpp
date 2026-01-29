@@ -31,6 +31,9 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   init_subscribers();
   init_publishers();
 
+  horn_duration_ =
+    rclcpp::Duration::from_seconds(params_.get_or<double>("arrival_horn_duration_s", 10.0));
+
   vcu_stat_publisher_.configure(
     *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
     turn_indicators_status_pub_, hazard_lights_status_pub_, steering_wheel_status_pub_);
@@ -95,8 +98,7 @@ void RobioneVehicleInterface::init_subscribers()
         &RobioneVehicleInterface::vehicle_emergency_cmd_callback, this, std::placeholders::_1));
 
   sub_route_state_ = this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
-    "/api/ad_api_adapter/routing_state",
-    rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local(),
+    "/api/ad_api_adapter/routing_state", rclcpp::QoS(1),
     std::bind(&RobioneVehicleInterface::route_state_callback, this, std::placeholders::_1));
 
   tablet_feedback_sub_ = this->create_subscription<robeff_msgs::msg::TabletFeedback>(
@@ -249,7 +251,7 @@ void RobioneVehicleInterface::route_state_callback(
   const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg)
 {
   if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
-    serial_port_.write("*CMD0#", sizeof("*CMD0#") - 1);  // Send command to horn on arrival
+    is_arrived_triggered = true;
   }
 }
 
@@ -260,6 +262,8 @@ void RobioneVehicleInterface::tablet_feedback_callback(
     msg->event_type == robeff_msgs::msg::TabletFeedback::ROUTE_COMPLETED ||
     msg->event_type == robeff_msgs::msg::TabletFeedback::ROUTE_REJECTED || msg->event_type == 6) {
     is_arrived_triggered = false;
+    horn_active_ = false;
+    vcu_ctrl_cmd_si_builder_.set_horn(false);
   }
 }
 
@@ -344,7 +348,6 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 {
   const bool any_seen = cmd_rate_monitor_.any_seen();
 
-  RCLCPP_INFO(this->get_logger(), "Diagnostic CMD Rate Callback any_seen=%d", any_seen);
   if (!any_seen) {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
     vcu_ctrl_cmd_si_builder_.set_emergency_active(false);
@@ -362,6 +365,21 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 
 void RobioneVehicleInterface::task_20ms()
 {
+  if (is_arrived_triggered && !horn_active_) {
+    if (horn_duration_.nanoseconds() > 0) {
+      horn_active_ = true;
+      horn_end_time_ = now() + horn_duration_;
+      vcu_ctrl_cmd_si_builder_.set_horn(true);
+    } else {
+      vcu_ctrl_cmd_si_builder_.set_horn(false);
+    }
+    is_arrived_triggered = false;
+  }
+
+  if (horn_active_ && now() >= horn_end_time_) {
+    horn_active_ = false;
+    vcu_ctrl_cmd_si_builder_.set_horn(false);
+  }
   can_frame_pub_->publish(vcu_ctrl_cmd_si_builder_.build_can_frame());
   vcu_ctrl_cmd_si_pub_->publish(vcu_ctrl_cmd_si_builder_.to_ros_msg());
 }
