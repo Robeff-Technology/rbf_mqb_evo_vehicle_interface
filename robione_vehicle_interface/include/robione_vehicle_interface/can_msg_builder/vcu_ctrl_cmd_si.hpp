@@ -49,7 +49,13 @@ public:
   void set_turn_right(bool on) { msg_.TurnRight = on ? 1U : 0U; }
   void set_hazard(bool on) { msg_.Hazard = on ? 1U : 0U; }
   void set_horn(bool on) { msg_.Horn = on ? 1U : 0U; }
-  void set_communication_fault(bool fault) { communication_fault_ = fault; }
+  void set_communication_fault(bool fault)
+  {
+    autoware_comm_fault_ = fault;
+    can_comm_fault_ = fault;
+  }
+  void set_autoware_comm_fault(bool fault) { autoware_comm_fault_ = fault; }
+  void set_can_comm_fault(bool fault) { can_comm_fault_ = fault; }
 
   void set_alive_counter(uint8_t counter) { msg_.AliveCounter = counter; }
 
@@ -110,7 +116,7 @@ protected:
     uint8_t len = 0U;
     uint8_t ide = 0U;
 
-    if (communication_fault_) {
+    if (autoware_comm_fault_ || can_comm_fault_) {
       msg_.VehicleSpeedMS_Cmd_phys = 0.0;
 
       msg_.AutonomousEnable = 0U;
@@ -144,6 +150,7 @@ protected:
 
 private:
   VCU_CTRL_CMD_SI_t msg_;
-  bool communication_fault_{false};
+  bool autoware_comm_fault_{false};
+  bool can_comm_fault_{false};
 };
 }  // namespace CanMsgBuilder

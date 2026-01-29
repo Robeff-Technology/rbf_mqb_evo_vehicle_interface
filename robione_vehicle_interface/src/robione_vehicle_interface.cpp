@@ -17,7 +17,10 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
     {"gear_cmd", params_.get_or<double>("expected_gear_cmd_hz", 0.0)},
     {"turn_indicators_cmd", params_.get_or<double>("expected_turn_indicators_cmd_hz", 0.0)},
     {"hazard_lights_cmd", params_.get_or<double>("expected_hazard_lights_cmd_hz", 0.0)},
-    {"vehicle_emergency_cmd", params_.get_or<double>("expected_vehicle_emergency_cmd_hz", 33.0)}}
+    {"vehicle_emergency_cmd", params_.get_or<double>("expected_vehicle_emergency_cmd_hz", 33.0)}},
+  can_rate_monitor_{
+    {"vcu_stat_motion", params_.get_or<double>("expected_vcu_stat_motion_hz", 50.0)},
+    {"vcu_stat_vehicle_state", params_.get_or<double>("expected_vcu_stat_vehicle_state_hz", 50.0)}}
 {
   params_.print_loaded_parameters();
   diag_updater_.setHardwareID("robione_vehicle_interface");
@@ -163,9 +166,8 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
     if (!result.ok()) {
       const auto reason = validator_it->second.format_message(result);
       RCLCPP_WARN_THROTTLE(
-        this->get_logger(), *this->get_clock(), 2000,
-        "CAN RX %s invalid (0x%X): %s", validator_it->second.name().c_str(), msg->id,
-        reason.c_str());
+        this->get_logger(), *this->get_clock(), 2000, "CAN RX %s invalid (0x%X): %s",
+        validator_it->second.name().c_str(), msg->id, reason.c_str());
       return;
     }
   }
@@ -182,8 +184,10 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
 
     if (rec_id == VCU_STAT_MOTION_SI_CANID) {
       vcu_stat_publisher_.publish_motion(pc_vcu_rx_.VCU_STAT_MOTION_SI);
+      can_rate_monitor_.update("vcu_stat_motion", now());
     } else if (rec_id == VCU_STAT_VEHICLE_STATE_CANID) {
       vcu_stat_publisher_.publish_vehicle_state(pc_vcu_rx_.VCU_STAT_VEHICLE_STATE);
+      can_rate_monitor_.update("vcu_stat_vehicle_state", now());
     }
   }
 
@@ -296,7 +300,7 @@ void RobioneVehicleInterface::diagnostic_serial_callback(
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Serial port is open");
     stat.add("Serial port", serial_port_name_);
   } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Serial port is not open");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Serial port is not open");
     stat.add("Serial port", serial_port_name_);
   }
 }
@@ -306,30 +310,17 @@ void RobioneVehicleInterface::diagnostic_can_callback(
 {
   stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "CAN ok");
 
-  const double timeout_s_fast = 0.2;  // 200ms
+  auto can_generate_emergency = false;
+  const auto can_rate_status = can_rate_monitor_.report(stat, now(), can_generate_emergency, false);
+  if (can_rate_status != RateMonitor::Status::OK) {
+    stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "CAN RX rate issue");
+  }
 
-  const auto now_time = now();
-
-  auto check_id = [&](uint32_t can_id, const char * name, double timeout_s) {
-    auto & w = can_watchdog_[can_id];
-
-    if (!w.seen) {
-      stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "CAN missing");
-      stat.addf(name, "never received (0x%X)", can_id);
-      return;
-    }
-
-    const double age = (now_time - w.last_rx).seconds();
-    if (age > timeout_s) {
-      stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "CAN stale");
-      stat.addf(name, "stale: %.3fs (timeout %.3fs) id=0x%X", age, timeout_s, can_id);
-    } else {
-      stat.addf(name, "ok: %.3fs id=0x%X", age, can_id);
-    }
-  };
-
-  check_id(VCU_STAT_MOTION_SI_CANID, "VCU_STAT_MOTION", timeout_s_fast);
-  check_id(VCU_STAT_VEHICLE_STATE_CANID, "VCU_STAT_VEHICLE_STATE", timeout_s_fast);
+  if (!can_rate_monitor_.any_seen() || can_rate_status != RateMonitor::Status::OK) {
+    vcu_ctrl_cmd_si_builder_.set_can_comm_fault(true);
+  } else {
+    vcu_ctrl_cmd_si_builder_.set_can_comm_fault(false);
+  }
 
   for (const auto & kv : rx_validators_) {
     const auto & validator = kv.second;
@@ -343,8 +334,8 @@ void RobioneVehicleInterface::diagnostic_can_callback(
 
     const std::string label = validator.name() + std::string("_rx");
     stat.addf(
-      label.c_str(), "frames=%u crc_err=%u alive_err=%u dlc_err=%u",
-      validator.frame_count(), crc_errors, alive_errors, dlc_errors);
+      label.c_str(), "frames=%u crc_err=%u alive_err=%u dlc_err=%u", validator.frame_count(),
+      crc_errors, alive_errors, dlc_errors);
   }
 }
 
@@ -357,6 +348,7 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   if (!any_seen) {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
     vcu_ctrl_cmd_si_builder_.set_emergency_active(false);
+    vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(true);
     return;
   }
 
@@ -365,7 +357,7 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   const bool has_fault = (status != RateMonitor::Status::OK);
 
   vcu_ctrl_cmd_si_builder_.set_autonomous_enable(!has_fault);
-  vcu_ctrl_cmd_si_builder_.set_communication_fault(generate_emergency);
+  vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(generate_emergency);
 }
 
 void RobioneVehicleInterface::task_20ms()

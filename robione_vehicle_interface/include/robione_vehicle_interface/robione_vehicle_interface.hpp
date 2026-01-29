@@ -132,11 +132,13 @@ public:
 
   Status report(
     diagnostic_updater::DiagnosticStatusWrapper & stat, const rclcpp::Time & now_time,
-    bool & generate_emergency) const
+    bool & generate_emergency, bool set_summary = true) const
   {
     generate_emergency = false;
     Status status = Status::OK;
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Command rates ok");
+    if (set_summary) {
+      stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Command rates ok");
+    }
 
     if (entries_.empty()) {
       stat.add("rate_targets", "empty");
@@ -317,6 +319,7 @@ private:
   void diagnostic_cmd_rate_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
   RateMonitor cmd_rate_monitor_;
+  RateMonitor can_rate_monitor_;
 
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered = false;
