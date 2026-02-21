@@ -11,24 +11,25 @@
 
 pc_vcu_rx_t pc_vcu_rx;
 
-#endif  // __DEF_PC_VCU__
+#endif // __DEF_PC_VCU__
 
-uint32_t pc_vcu_Receive(pc_vcu_rx_t * _m, const uint8_t * _d, uint32_t _id, uint8_t dlc_)
+uint32_t pc_vcu_Receive(pc_vcu_rx_t* _m, const uint8_t* _d, uint32_t _id, uint8_t dlc_)
 {
-  uint32_t recid = 0;
-  if ((_id >= 0x1DEF0410U) && (_id < 0x1DEFB000U)) {
-    if (_id == 0x1DEF0410U) {
-      recid = Unpack_VCU_STAT_MOTION_SI_pc_vcu(&(_m->VCU_STAT_MOTION_SI), _d, dlc_);
-    } else if (_id == 0x1DEF0411U) {
-      recid = Unpack_VCU_STAT_VEHICLE_STATE_pc_vcu(&(_m->VCU_STAT_VEHICLE_STATE), _d, dlc_);
-    }
-  } else {
-    if (_id == 0x1DEFB000U) {
-      recid = Unpack_VCU_CTRL_CMD_SI_pc_vcu(&(_m->VCU_CTRL_CMD_SI), _d, dlc_);
-    } else if (_id == 0x1DEFB001U) {
-      recid = Unpack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(&(_m->SAFE_STAT_ROS2_HEARTBEAT), _d, dlc_);
-    }
+ uint32_t recid = 0;
+ if ((_id >= 0x40A0001U) && (_id < 0xC150010U)) {
+  if (_id == 0x40A0001U) {
+   recid = Unpack_VCU_CTRL_CMD_SI_pc_vcu(&(_m->VCU_CTRL_CMD_SI), _d, dlc_);
+  } else if (_id == 0x80A000FU) {
+   recid = Unpack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(&(_m->SAFE_STAT_ROS2_HEARTBEAT), _d, dlc_);
   }
+ } else {
+  if (_id == 0xC150010U) {
+   recid = Unpack_VCU_STAT_MOTION_SI_pc_vcu(&(_m->VCU_STAT_MOTION_SI), _d, dlc_);
+  } else if (_id == 0xC150011U) {
+   recid = Unpack_VCU_STAT_VEHICLE_STATE_pc_vcu(&(_m->VCU_STAT_VEHICLE_STATE), _d, dlc_);
+  }
+ }
 
-  return recid;
+ return recid;
 }
+

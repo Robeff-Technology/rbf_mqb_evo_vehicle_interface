@@ -45,7 +45,6 @@
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <robeff_msgs/msg/sick_zone.hpp>
 #include <robeff_msgs/msg/tablet_feedback.hpp>
-#include <robione_vehicle_interface_msgs/msg/vcu_ctrl_cmd_si.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
@@ -251,6 +250,7 @@ private:
   // robeff_msgs subscription
   rclcpp::Subscription<robeff_msgs::msg::TabletFeedback>::SharedPtr tablet_feedback_sub_;
   rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr sick_zone_sub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr primitive_emergency_detector_sub_;
 
   // From Autoware
   rclcpp::Subscription<autoware_control_msgs::msg::Control>::SharedPtr control_cmd_sub_;
@@ -280,10 +280,6 @@ private:
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
 
-  // Can Frame builder publishers
-  rclcpp::Publisher<robione_vehicle_interface_msgs::msg::VcuCtrlCmdSi>::SharedPtr
-    vcu_ctrl_cmd_si_pub_;
-
   // Callbacks
   void rain_mode_callback(const std_msgs::msg::Bool::SharedPtr msg);
   void control_cmd_callback(const autoware_control_msgs::msg::Control::SharedPtr msg);
@@ -297,9 +293,11 @@ private:
   void route_state_callback(const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg);
   void tablet_feedback_callback(const robeff_msgs::msg::TabletFeedback::ConstSharedPtr msg);
   void sick_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
+  void primitive_emergency_detector_callback(const std_msgs::msg::Bool::ConstSharedPtr msg);
+  void update_merged_emergency_state();
 
-  // Init helpers
-  void init_subscribers();
+    // Init helpers
+    void init_subscribers();
   void init_publishers();
 
   // Serial port for communicating with vehicle (configured from params)
@@ -324,12 +322,17 @@ private:
   RateMonitor can_rate_monitor_;
 
   bool is_control_cmd_timeout_ = false;
-  bool is_arrived_triggered = false;
-  bool is_restricted_area_detect = false;
+  bool is_arrived_triggered_ = false;
+  bool is_route_set_triggered_ = false;
+  bool is_restricted_area_detect_ = false;
+  bool emergency_from_vehicle_cmd_{false};
+  bool emergency_from_primitive_detector_raw_{false};
+  bool is_sick_zone_deactivated_{false};
 
   rclcpp::Duration horn_duration_{0, 0};
   rclcpp::Time horn_end_time_{0, 0, RCL_ROS_TIME};
   bool horn_active_{false};
+  bool is_horn_on_route_{false};
 
   // Tasks
   void task_20ms();

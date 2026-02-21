@@ -4,8 +4,6 @@
 #include "crc.hpp"
 #include "robione_vehicle_interface/can_msg_builder/can_msg_builder_interface.hpp"
 
-#include "robione_vehicle_interface_msgs/msg/vcu_ctrl_cmd_si.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -80,25 +78,6 @@ public:
 
   void * get_message_struct() override { return &msg_; }
   uint32_t get_can_id() const override { return VCU_CTRL_CMD_SI_CANID; }
-
-  robione_vehicle_interface_msgs::msg::VcuCtrlCmdSi to_ros_msg() const
-  {
-    robione_vehicle_interface_msgs::msg::VcuCtrlCmdSi ros_msg;
-
-    ros_msg.tire_angle_rad_cmd = get_tire_angle_rad_cmd();
-    ros_msg.vehicle_speed_ms_cmd = get_vehicle_speed_ms_cmd();
-    ros_msg.autonomous_enable = get_autonomous_enable();
-    ros_msg.emergency_active = get_emergency_active();
-    ros_msg.safety_disable = get_safety_disable();
-    ros_msg.gear_req = get_gear_req();
-    ros_msg.turn_left = get_turn_left();
-    ros_msg.turn_right = get_turn_right();
-    ros_msg.hazard = get_hazard();
-    ros_msg.horn = get_horn();
-    ros_msg.alive_counter = get_alive_counter();
-
-    return ros_msg;
-  }
 
 protected:
   // =========================================================================
