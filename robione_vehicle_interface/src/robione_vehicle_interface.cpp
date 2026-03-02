@@ -165,6 +165,7 @@ bool RobioneVehicleInterface::openSerial(const std::string & port, unsigned int 
 
 void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
+  // DBC SIDE
   auto validator_it = rx_validators_.find(msg->id);
   if (validator_it != rx_validators_.end()) {
     const auto result = validator_it->second.validate(*msg);
@@ -196,11 +197,6 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
     }
   }
 
-  if (msg->id == 0xA0002DBU) {
-    const int system_rc = system("pkill -f /robione_vehicle_interface");
-    (void)system_rc;
-    rclcpp::shutdown();
-  }
 }
 
 void RobioneVehicleInterface::control_cmd_callback(
@@ -376,10 +372,13 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   const bool any_seen = cmd_rate_monitor_.any_seen();
+  
+  if (is_route_set_triggered_)
+  {
+    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
+  }
 
   if (!any_seen) {
-    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
-    vcu_ctrl_cmd_si_builder_.set_emergency_active(false);
     vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(true);
     return;
   }
