@@ -77,6 +77,11 @@ struct RateWatch
   rclcpp::Time last = rclcpp::Time(static_cast<int64_t>(0), RCL_ROS_TIME);
   bool seen{false};
   double last_hz{0.0};
+
+  static constexpr size_t WINDOW_SIZE = 10;
+  std::array<double, WINDOW_SIZE> dt_history{};
+  size_t dt_index{0};
+  size_t dt_count{0};
 };
 
 class RateMonitor
@@ -121,7 +126,22 @@ public:
     if (w.seen) {
       const double dt = (now_time - w.last).seconds();
       if (dt > 0.0) {
-        w.last_hz = 1.0 / dt;
+        // Hareketli ortalama için dt'yi kaydet
+        w.dt_history[w.dt_index] = dt;
+        w.dt_index = (w.dt_index + 1) % w.WINDOW_SIZE;
+        if (w.dt_count < w.WINDOW_SIZE) {
+          w.dt_count++;
+        }
+
+        // Ortalama dt hesapla
+        double sum_dt = 0.0;
+        for (size_t i = 0; i < w.dt_count; ++i) {
+          sum_dt += w.dt_history[i];
+        }
+        const double avg_dt = sum_dt / w.dt_count;
+        
+        // Ortalama dt'den frekans hesapla
+        w.last_hz = 1.0 / avg_dt;
       }
     }
 
@@ -321,9 +341,11 @@ private:
   RateMonitor cmd_rate_monitor_;
   RateMonitor can_rate_monitor_;
 
+  // Route Handling
+  bool is_route_set_triggered_ = false;
+  bool is_route_set_ = false;
   bool is_control_cmd_timeout_ = false;
   bool is_arrived_triggered_ = false;
-  bool is_route_set_triggered_ = false;
   bool is_restricted_area_detect_ = false;
   bool emergency_from_vehicle_cmd_{false};
   bool emergency_from_primitive_detector_raw_{false};

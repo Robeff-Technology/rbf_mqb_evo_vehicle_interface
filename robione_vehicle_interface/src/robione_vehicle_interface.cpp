@@ -75,31 +75,33 @@ void RobioneVehicleInterface::init_subscribers()
 
   // Autoware command subscriptions
   control_cmd_sub_ = create_subscription<autoware_control_msgs::msg::Control>(
-    "/control/command/control_cmd", rclcpp::QoS(1),
+    "/control/command/control_cmd", rclcpp::QoS(10).reliable(),
     std::bind(&RobioneVehicleInterface::control_cmd_callback, this, std::placeholders::_1));
 
   gear_cmd_sub_ = create_subscription<autoware_vehicle_msgs::msg::GearCommand>(
-    "/control/command/gear_cmd", rclcpp::QoS(1),
+    "/control/command/gear_cmd", rclcpp::QoS(5).reliable(),
     std::bind(&RobioneVehicleInterface::gear_cmd_callback, this, std::placeholders::_1));
 
   turn_indicators_cmd_sub_ = create_subscription<autoware_vehicle_msgs::msg::TurnIndicatorsCommand>(
-    "/control/command/turn_indicators_cmd", rclcpp::QoS(1),
+    "/control/command/turn_indicators_cmd", rclcpp::QoS(5).reliable(),
     std::bind(&RobioneVehicleInterface::turn_indicators_cmd_callback, this, std::placeholders::_1));
 
   hazard_lights_cmd_sub_ = create_subscription<autoware_vehicle_msgs::msg::HazardLightsCommand>(
-    "/control/command/hazard_lights_cmd", rclcpp::QoS(1),
+    "/control/command/hazard_lights_cmd", rclcpp::QoS(5).reliable(),
     std::bind(&RobioneVehicleInterface::hazard_lights_cmd_callback, this, std::placeholders::_1));
 
   vehicle_emergency_cmd_sub_ =
     create_subscription<tier4_vehicle_msgs::msg::VehicleEmergencyStamped>(
-      "/control/command/emergency_cmd", rclcpp::QoS(1),
+      "/control/command/emergency_cmd", rclcpp::QoS(10).reliable(),
       std::bind(
         &RobioneVehicleInterface::vehicle_emergency_cmd_callback, this, std::placeholders::_1));
 
+  RCLCPP_INFO(this->get_logger(), "Creating route state subscription to /api/routing/state");
   sub_route_state_ = this->create_subscription<autoware_adapi_v1_msgs::msg::RouteState>(
-    "/api/ad_api_adapter/routing_state",
-    rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local(),
+    "/api/routing/state",
+    rclcpp::QoS(1).transient_local().reliable(),
     std::bind(&RobioneVehicleInterface::route_state_callback, this, std::placeholders::_1));
+  RCLCPP_INFO(this->get_logger(), "Route state subscription created successfully");
 
   tablet_feedback_sub_ = this->create_subscription<robeff_msgs::msg::TabletFeedback>(
     "/api/ad_api_adapter/tablet_feedback", rclcpp::QoS{1},
@@ -122,20 +124,20 @@ void RobioneVehicleInterface::init_publishers()
   can_frame_pub_ = create_publisher<can_msgs::msg::Frame>("to_can_bus", rclcpp::QoS(500));
   // autoware
   control_mode_pub_ = create_publisher<autoware_vehicle_msgs::msg::ControlModeReport>(
-    "/vehicle/status/control_mode", rclcpp::QoS{1});
+    "/vehicle/status/control_mode", rclcpp::QoS(10).reliable());
   vehicle_twist_pub_ = create_publisher<autoware_vehicle_msgs::msg::VelocityReport>(
-    "/vehicle/status/velocity_status", rclcpp::QoS{1});
+    "/vehicle/status/velocity_status", rclcpp::QoS(10).reliable());
   steering_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::SteeringReport>(
-    "/vehicle/status/steering_status", rclcpp::QoS{1});
+    "/vehicle/status/steering_status", rclcpp::QoS(10).reliable());
   gear_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::GearReport>(
-    "/vehicle/status/gear_status", rclcpp::QoS{1});
+    "/vehicle/status/gear_status", rclcpp::QoS(5).reliable());
   turn_indicators_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>(
-    "/vehicle/status/turn_indicators_status", rclcpp::QoS{1});
+    "/vehicle/status/turn_indicators_status", rclcpp::QoS(5).reliable());
   hazard_lights_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::HazardLightsReport>(
-    "/vehicle/status/hazard_lights_status", rclcpp::QoS{1});  // DO WE NEED IT?
+    "/vehicle/status/hazard_lights_status", rclcpp::QoS(5).reliable());
   steering_wheel_status_pub_ =
     create_publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>(
-      "/vehicle/status/steering_wheel_status", 1);
+      "/vehicle/status/steering_wheel_status", rclcpp::QoS(10).reliable());
 }
 
 bool RobioneVehicleInterface::openSerialFromConfig()
@@ -210,6 +212,7 @@ void RobioneVehicleInterface::control_cmd_callback(
 void RobioneVehicleInterface::gear_cmd_callback(
   const autoware_vehicle_msgs::msg::GearCommand::SharedPtr msg)
 {
+  // Gear Req seems to be published without any problem in autoware side
   vcu_ctrl_cmd_si_builder_.set_gear_req(
     static_cast<CanMsgBuilder::VcuCtrlCmdSi::GearReq>(msg->command));
   cmd_rate_monitor_.update("gear_cmd", now());
@@ -252,8 +255,12 @@ void RobioneVehicleInterface::route_state_callback(
 {
   if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::SET) {
     is_route_set_triggered_ = true;
+    is_route_set_ = true;
+    RCLCPP_INFO(this->get_logger(), "Route state is SET");
   } else {
     is_route_set_triggered_ = false;
+    is_route_set_ = false;
+    RCLCPP_INFO(this->get_logger(), "Route state is not SET");
   }
 
   if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
@@ -299,6 +306,8 @@ void RobioneVehicleInterface::update_merged_emergency_state()
   const bool emergency_from_primitive_detector =
     emergency_from_primitive_detector_raw_ && is_sick_zone_deactivated_;
   const bool merged_emergency = emergency_from_vehicle_cmd_ || emergency_from_primitive_detector;
+
+  // Emergency is 1 even there is no emergency
   vcu_ctrl_cmd_si_builder_.set_emergency_active(merged_emergency);
 }
 
@@ -314,11 +323,7 @@ void RobioneVehicleInterface::rain_mode_callback(const std_msgs::msg::Bool::Shar
     if (rain_mode_ != msg->data) {
       rain_mode_ = msg->data;
       RCLCPP_INFO(this->get_logger(), "Rain mode set to: %s", rain_mode_ ? "enabled" : "disabled");
-    } else {
-      RCLCPP_INFO(this->get_logger(), "Rain mode was already enabled.");
-    }
-  } else {
-    RCLCPP_WARN(this->get_logger(), "Received null message for rain mode.");
+    } 
   }
 }
 
@@ -340,12 +345,11 @@ void RobioneVehicleInterface::diagnostic_can_callback(
   stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "CAN ok");
 
   auto can_generate_emergency = false;
-  const auto can_rate_status = can_rate_monitor_.report(stat, now(), can_generate_emergency, false);
+  // skip_disabled=true makes 0.0 Hz params work like other monitors
+  const auto can_rate_status = can_rate_monitor_.report(stat, now(), can_generate_emergency, false, true);
+  
   if (can_rate_status != RateMonitor::Status::OK) {
     stat.mergeSummary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "CAN RX rate issue");
-  }
-
-  if (!can_rate_monitor_.any_seen() || can_rate_status != RateMonitor::Status::OK) {
     vcu_ctrl_cmd_si_builder_.set_can_comm_fault(true);
   } else {
     vcu_ctrl_cmd_si_builder_.set_can_comm_fault(false);
@@ -373,22 +377,28 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 {
   const bool any_seen = cmd_rate_monitor_.any_seen();
   
-  if (is_route_set_triggered_)
+
+  // Autonomous enable is not getting updated even the is_route_set_triggered_ is true
+  // No problem at autoware side
+  if (is_route_set_)
   {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
   }
+  else
+  {
+    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
+  }
 
   if (!any_seen) {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "No commands received yet");
     vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(true);
     return;
   }
 
   auto generate_emergency = false;
   const auto status = cmd_rate_monitor_.report(stat, now(), generate_emergency, true, true);
-  const bool has_fault = (status != RateMonitor::Status::OK);
-
-  vcu_ctrl_cmd_si_builder_.set_autonomous_enable(!has_fault);
   vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(generate_emergency);
+  is_route_set_ = false;
 }
 
 void RobioneVehicleInterface::task_20ms()
