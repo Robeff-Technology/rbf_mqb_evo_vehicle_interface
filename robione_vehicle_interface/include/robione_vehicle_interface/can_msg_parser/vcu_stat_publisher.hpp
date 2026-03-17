@@ -10,6 +10,7 @@
 #include <autoware_vehicle_msgs/msg/steering_report.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
+#include <tier4_vehicle_msgs/msg/battery_status.hpp>
 #include <tier4_vehicle_msgs/msg/steering_wheel_status_stamped.hpp>
 
 namespace CanMsgParser
@@ -26,6 +27,7 @@ public:
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr & gear_pub,
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr & turn_pub,
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr & hazard_pub,
+    const rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr & battery_pub,
     const rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr &
       steer_st)
   {
@@ -36,6 +38,7 @@ public:
     gear_pub_ = gear_pub;
     turn_pub_ = turn_pub;
     hazard_pub_ = hazard_pub;
+    battery_pub_ = battery_pub;
     steer_st_ = steer_st;
   }
 
@@ -67,7 +70,7 @@ public:
 
   void publish_vehicle_state(const VCU_STAT_VEHICLE_STATE_t & stat) const
   {
-    if (!control_mode_pub_ || !gear_pub_ || !turn_pub_ || !hazard_pub_) {
+    if (!control_mode_pub_ || !gear_pub_ || !turn_pub_ || !hazard_pub_ || !battery_pub_) {
       return;
     }
 
@@ -100,6 +103,11 @@ public:
                              ? autoware_vehicle_msgs::msg::HazardLightsReport::ENABLE
                              : autoware_vehicle_msgs::msg::HazardLightsReport::DISABLE;
     hazard_pub_->publish(hazard_report);
+
+    tier4_vehicle_msgs::msg::BatteryStatus battery_status;
+    battery_status.stamp = stamp;
+    battery_status.energy_level = static_cast<float>(stat.BatterySoC) / 100.0F;
+    battery_pub_->publish(battery_status);
   }
 
 private:
@@ -126,6 +134,7 @@ private:
   rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr gear_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr turn_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr hazard_pub_;
+  rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr battery_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr steer_st_;
 };
 }  // namespace CanMsgParser

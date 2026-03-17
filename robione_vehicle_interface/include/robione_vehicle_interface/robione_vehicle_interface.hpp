@@ -49,6 +49,7 @@
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_status_stamped.hpp>
+#include <tier4_vehicle_msgs/msg/battery_status.hpp>
 #include <tier4_vehicle_msgs/msg/steering_wheel_status_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/vehicle_emergency_stamped.hpp>
 
@@ -297,6 +298,7 @@ private:
     turn_indicators_status_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr
     hazard_lights_status_pub_;
+  rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr battery_status_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
 

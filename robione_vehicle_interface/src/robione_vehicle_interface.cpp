@@ -35,7 +35,8 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
 
   vcu_stat_publisher_.configure(
     *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
-    turn_indicators_status_pub_, hazard_lights_status_pub_, steering_wheel_status_pub_);
+    turn_indicators_status_pub_, hazard_lights_status_pub_, battery_status_pub_,
+    steering_wheel_status_pub_);
 
   rx_validators_.emplace(
     VCU_STAT_MOTION_SI_CANID,
@@ -135,6 +136,8 @@ void RobioneVehicleInterface::init_publishers()
     "/vehicle/status/turn_indicators_status", rclcpp::QoS(5).reliable());
   hazard_lights_status_pub_ = create_publisher<autoware_vehicle_msgs::msg::HazardLightsReport>(
     "/vehicle/status/hazard_lights_status", rclcpp::QoS(5).reliable());
+  battery_status_pub_ = create_publisher<tier4_vehicle_msgs::msg::BatteryStatus>(
+    "/vehicle/status/battery_charge", rclcpp::QoS(5).reliable());
   steering_wheel_status_pub_ =
     create_publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>(
       "/vehicle/status/steering_wheel_status", rclcpp::QoS(10).reliable());
