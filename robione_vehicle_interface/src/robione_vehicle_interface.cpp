@@ -401,7 +401,6 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   auto generate_emergency = false;
   const auto status = cmd_rate_monitor_.report(stat, now(), generate_emergency, true, true);
   vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(generate_emergency);
-  is_route_set_ = false;
 }
 
 void RobioneVehicleInterface::task_20ms()
