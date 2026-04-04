@@ -36,7 +36,7 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   vcu_stat_publisher_.configure(
     *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
     turn_indicators_status_pub_, hazard_lights_status_pub_, battery_status_pub_,
-    steering_wheel_status_pub_);
+    steering_wheel_status_pub_, params_.get<std::string>("base_frame_id"));
 
   rx_validators_.emplace(
     VCU_STAT_MOTION_SI_CANID,

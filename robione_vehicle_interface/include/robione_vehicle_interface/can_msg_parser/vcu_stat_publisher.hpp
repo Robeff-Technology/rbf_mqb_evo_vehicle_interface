@@ -29,7 +29,8 @@ public:
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr & hazard_pub,
     const rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr & battery_pub,
     const rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr &
-      steer_st)
+      steer_st,
+    const std::string & base_frame_id)
   {
     clock_ = node.get_clock();
     control_mode_pub_ = control_mode_pub;
@@ -40,6 +41,7 @@ public:
     hazard_pub_ = hazard_pub;
     battery_pub_ = battery_pub;
     steer_st_ = steer_st;
+    base_frame_id_ = base_frame_id;
   }
 
   void publish_motion(const VCU_STAT_MOTION_SI_t & stat) const
@@ -52,6 +54,7 @@ public:
 
     autoware_vehicle_msgs::msg::VelocityReport velocity_report;
     velocity_report.header.stamp = stamp;
+    velocity_report.header.frame_id = base_frame_id_;
     velocity_report.longitudinal_velocity = static_cast<float>(stat.VehicleSpeedMS_Act_phys);
     velocity_report.lateral_velocity = 0.0F;
     velocity_report.heading_rate = 0.0F;
@@ -115,9 +118,9 @@ private:
   {
     switch (control_mode) {
       case 1U:
-        return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
-      case 2U:
         return autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
+      case 2U:
+        return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
       case 0U:
       case 3U:
       case 4U:
@@ -136,5 +139,6 @@ private:
   rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr hazard_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr battery_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr steer_st_;
+  std::string base_frame_id_;
 };
 }  // namespace CanMsgParser
