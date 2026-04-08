@@ -307,7 +307,7 @@ void RobioneVehicleInterface::primitive_emergency_detector_callback(
 void RobioneVehicleInterface::update_merged_emergency_state()
 {
   const bool emergency_from_primitive_detector =
-    emergency_from_primitive_detector_raw_ && is_sick_zone_deactivated_;
+    emergency_from_primitive_detector_raw_ && !is_adsick_zone_deactivated_;
   const bool merged_emergency = emergency_from_vehicle_cmd_ || emergency_from_primitive_detector;
 
   // Emergency is 1 even there is no emergency
