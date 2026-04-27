@@ -3,6 +3,7 @@
 #include "can_interface/pc_vcu.h"
 
 #include <rclcpp/rclcpp.hpp>
+#include <robeff_msgs/msg/vehicle_status.hpp>
 
 #include <autoware_vehicle_msgs/msg/control_mode_report.hpp>
 #include <autoware_vehicle_msgs/msg/gear_report.hpp>
@@ -30,9 +31,11 @@ public:
     const rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr & battery_pub,
     const rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr &
       steer_st,
-    const std::string & base_frame_id)
+    const std::string & base_frame_id,
+    const rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr & vehicle_status_pub)
   {
     clock_ = node.get_clock();
+    vehicle_status_pub_ = vehicle_status_pub;
     control_mode_pub_ = control_mode_pub;
     velocity_pub_ = velocity_pub;
     steering_pub_ = steering_pub;
@@ -69,6 +72,44 @@ public:
     steer_wheel_status.stamp = stamp;
     steer_wheel_status.data = static_cast<float>(stat.SteerAngleDeg_Act);
     steer_st_->publish(steer_wheel_status);
+  }
+
+  void update_safety_status(const SAFETY_MANAGER_STATUS_t & stat)
+  {
+    latest_safety_status_ = stat;
+  }
+
+  void update_dtc_status(uint64_t raw)
+  {
+    latest_dtc_status_ = raw;
+  }
+
+  void update_dtc_status_1(uint64_t raw)
+  {
+    latest_dtc_status_1_ = raw;
+  }
+
+  void update_mcu_status(const MCU_MODULE_STATUS_t & stat)
+  {
+    latest_mcu_status_ = stat;
+  }
+
+  void publish_vehicle_status()
+  {
+    if (!vehicle_status_pub_) {
+      return;
+    }
+    robeff_msgs::msg::VehicleStatus msg;
+    msg.emergency_brake_active = static_cast<bool>(latest_safety_status_.SM_EmergencyStopActive);
+    msg.emergency_triggered_by_button = static_cast<bool>(latest_safety_status_.SM_Err_EmergencyButton);
+    msg.emergency_triggered_by_safety = static_cast<bool>(latest_safety_status_.SM_ErrSafety);
+    msg.emergency_triggered_by_remote_controller = static_cast<bool>(latest_safety_status_.SM_ErrRCEmergency);
+    msg.emergency_triggered_by_autonomous_driving = static_cast<bool>(latest_safety_status_.SM_Err_PCVCU);
+    msg.dtc_status_1 = latest_dtc_status_;
+    msg.dtc_status_2 = latest_dtc_status_1_;
+    msg.odometer = static_cast<float>(latest_mcu_status_.MCU_Odometer_ro) *
+                   static_cast<float>(PC_VCU_MCU_Odometer_ro_CovFactor);
+    vehicle_status_pub_->publish(msg);
   }
 
   void publish_vehicle_state(const VCU_STAT_VEHICLE_STATE_t & stat) const
@@ -130,7 +171,12 @@ private:
     }
   }
 
+  SAFETY_MANAGER_STATUS_t latest_safety_status_{};
+  uint64_t latest_dtc_status_{0U};
+  uint64_t latest_dtc_status_1_{0U};
+  MCU_MODULE_STATUS_t latest_mcu_status_{};
   rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::ControlModeReport>::SharedPtr control_mode_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::VelocityReport>::SharedPtr velocity_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::SteeringReport>::SharedPtr steering_pub_;

@@ -1,6 +1,8 @@
 #include "robione_vehicle_interface/robione_vehicle_interface.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cstring>
 
 namespace robione_vehicle_interface
 {
@@ -36,7 +38,8 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
   vcu_stat_publisher_.configure(
     *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
     turn_indicators_status_pub_, hazard_lights_status_pub_, battery_status_pub_,
-    steering_wheel_status_pub_, params_.get<std::string>("base_frame_id"));
+    steering_wheel_status_pub_, params_.get<std::string>("base_frame_id"),
+    vehicle_status_pub_);
 
   rx_validators_.emplace(
     VCU_STAT_MOTION_SI_CANID,
@@ -141,6 +144,8 @@ void RobioneVehicleInterface::init_publishers()
   steering_wheel_status_pub_ =
     create_publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>(
       "/vehicle/status/steering_wheel_status", rclcpp::QoS(10).reliable());
+  vehicle_status_pub_ = create_publisher<robeff_msgs::msg::VehicleStatus>(
+    "/robione_vehicle_interface/vehicle_status", rclcpp::QoS(10).reliable());
 }
 
 bool RobioneVehicleInterface::openSerialFromConfig()
@@ -199,6 +204,18 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
     } else if (rec_id == VCU_STAT_VEHICLE_STATE_CANID) {
       vcu_stat_publisher_.publish_vehicle_state(pc_vcu_rx_.VCU_STAT_VEHICLE_STATE);
       can_rate_monitor_.update("vcu_stat_vehicle_state", now());
+    } else if (rec_id == SAFETY_MANAGER_STATUS_CANID) {
+      vcu_stat_publisher_.update_safety_status(pc_vcu_rx_.SAFETY_MANAGER_STATUS);
+    } else if (rec_id == DTC_ERROR_STATUS_CANID) {
+      uint64_t raw = 0U;
+      std::memcpy(&raw, msg->data.data(), std::min<size_t>(msg->dlc, sizeof(uint64_t)));
+      vcu_stat_publisher_.update_dtc_status(raw);
+    } else if (rec_id == DTC_ERROR_STATUS_1_CANID) {
+      uint64_t raw = 0U;
+      std::memcpy(&raw, msg->data.data(), std::min<size_t>(msg->dlc, sizeof(uint64_t)));
+      vcu_stat_publisher_.update_dtc_status_1(raw);
+    } else if (rec_id == MCU_MODULE_STATUS_CANID) {
+      vcu_stat_publisher_.update_mcu_status(pc_vcu_rx_.MCU_MODULE_STATUS);
     }
   }
 
@@ -435,6 +452,7 @@ void RobioneVehicleInterface::task_50ms()
 {
   safe_stat_ros2_heartbeat_builder_.set_ros_time_from_now();
   can_frame_pub_->publish(safe_stat_ros2_heartbeat_builder_.build_can_frame());
+  vcu_stat_publisher_.publish_vehicle_status();
 }
 };  // namespace robione_vehicle_interface
 #include <rclcpp_components/register_node_macro.hpp>

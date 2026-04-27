@@ -45,6 +45,7 @@
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <robeff_msgs/msg/sick_zone.hpp>
 #include <robeff_msgs/msg/tablet_feedback.hpp>
+#include <robeff_msgs/msg/vehicle_status.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
@@ -301,6 +302,7 @@ private:
   rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr battery_status_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
+  rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_pub_;
 
   // Callbacks
   void rain_mode_callback(const std_msgs::msg::Bool::SharedPtr msg);
@@ -314,6 +316,7 @@ private:
     const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg);
   void route_state_callback(const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg);
   void tablet_feedback_callback(const robeff_msgs::msg::TabletFeedback::ConstSharedPtr msg);
+  void vehicle_status_callback(const robeff_msgs::msg::VehicleStatus::ConstSharedPtr msg);
   void sick_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
   void primitive_emergency_detector_callback(const std_msgs::msg::Bool::ConstSharedPtr msg);
   void update_merged_emergency_state();
