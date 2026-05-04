@@ -100,7 +100,6 @@ public:
       return;
     }
     robeff_msgs::msg::VehicleStatus msg;
-    msg.emergency_brake_active = static_cast<bool>(latest_safety_status_.SM_EmergencyStopActive);
     msg.emergency_triggered_by_button = static_cast<bool>(latest_safety_status_.SM_Err_EmergencyButton);
     msg.emergency_triggered_by_safety = static_cast<bool>(latest_safety_status_.SM_ErrSafety);
     msg.emergency_triggered_by_remote_controller = static_cast<bool>(latest_safety_status_.SM_ErrRCEmergency);
