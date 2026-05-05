@@ -304,14 +304,6 @@ void RobioneVehicleInterface::sick_zone_callback(
   const robeff_msgs::msg::SickZone::ConstSharedPtr msg)
 {
   is_sick_zone_deactivated_ = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
-
-  if (is_sick_zone_deactivated_ || rain_mode_) {
-    vcu_ctrl_cmd_si_builder_.set_safety_disable(true);
-  } else {
-    vcu_ctrl_cmd_si_builder_.set_safety_disable(false);
-  }
-
-  update_merged_emergency_state();
 }
 
 void RobioneVehicleInterface::primitive_emergency_detector_callback(
@@ -446,6 +438,13 @@ void RobioneVehicleInterface::task_20ms()
     horn_active_ = false;
     vcu_ctrl_cmd_si_builder_.set_horn(false);
   }
+  if (is_sick_zone_deactivated_ || rain_mode_) {
+    vcu_ctrl_cmd_si_builder_.set_safety_disable(true);
+  } else {
+    vcu_ctrl_cmd_si_builder_.set_safety_disable(false);
+  }
+
+  update_merged_emergency_state();
   can_frame_pub_->publish(vcu_ctrl_cmd_si_builder_.build_can_frame());
 }
 void RobioneVehicleInterface::task_50ms()

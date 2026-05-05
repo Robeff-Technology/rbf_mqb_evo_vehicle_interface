@@ -38,7 +38,7 @@ public:
 
   void set_autonomous_enable(bool enable) { msg_.AutonomousEnable = enable ? 1U : 0U; }
   void set_emergency_active(bool active) { msg_.EmergencyActive = active ? 1U : 0U; }
-  void set_safety_disable(bool disable) { msg_.SafetyDisable = 1U; }
+  void set_safety_disable(bool disable) { msg_.SafetyDisable = disable ? 1U : 0U; }
 
   void set_gear_req(GearReq gear) { msg_.GearReq = static_cast<uint8_t>(gear); }
   void set_gear_req_raw(uint8_t gear) { msg_.GearReq = gear; }
@@ -100,7 +100,6 @@ protected:
 
       msg_.AutonomousEnable = 0U;
       msg_.EmergencyActive = 1U;
-      msg_.SafetyDisable = 0U;
 
       msg_.GearReq = static_cast<uint8_t>(GearReq::PARK);
 
@@ -109,7 +108,6 @@ protected:
       msg_.Hazard = 1U;
       msg_.Horn = 0U;
     }
-    msg_.SafetyDisable = 1U;
     // pack without CRC first
     Pack_VCU_CTRL_CMD_SI_pc_vcu(&msg_, frame_out.data(), &len, &ide);
 
