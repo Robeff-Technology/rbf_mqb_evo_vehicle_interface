@@ -115,6 +115,10 @@ void RobioneVehicleInterface::init_subscribers()
     "/api/sick/zone", rclcpp::QoS(1).transient_local().reliable(),
     std::bind(&RobioneVehicleInterface::sick_zone_callback, this, std::placeholders::_1));
 
+  primitive_zone_sub_ = this->create_subscription<robeff_msgs::msg::SickZone>(
+    "/api/primitive/zone", rclcpp::QoS(1).transient_local().reliable(),
+    std::bind(&RobioneVehicleInterface::primitive_zone_callback, this, std::placeholders::_1));
+
   primitive_emergency_detector_sub_ = this->create_subscription<std_msgs::msg::Bool>(
     "/perception/primitive_emergency_detector/emergency", 10,
     std::bind(
@@ -306,6 +310,12 @@ void RobioneVehicleInterface::sick_zone_callback(
   is_sick_zone_deactivated_ = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
 }
 
+void RobioneVehicleInterface::primitive_zone_callback(
+  const robeff_msgs::msg::SickZone::ConstSharedPtr msg)
+{
+  is_primitive_zone_deactivated_ = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
+}
+
 void RobioneVehicleInterface::primitive_emergency_detector_callback(
   const std_msgs::msg::Bool::ConstSharedPtr msg)
 {
@@ -315,10 +325,9 @@ void RobioneVehicleInterface::primitive_emergency_detector_callback(
 
 void RobioneVehicleInterface::update_merged_emergency_state()
 {
-  const bool emergency_from_primitive_detector =  
-    emergency_from_primitive_detector_raw_ && !is_sick_zone_deactivated_;
-  const bool merged_emergency = emergency_from_vehicle_cmd_ || emergency_from_primitive_detector;
-  // Emergency is 1 even there is no emergency
+  const bool sick_emergency = emergency_from_vehicle_cmd_ && !is_sick_zone_deactivated_;
+  const bool primitive_emergency = emergency_from_primitive_detector_raw_ && !is_primitive_zone_deactivated_;
+  const bool merged_emergency = sick_emergency || primitive_emergency;
   vcu_ctrl_cmd_si_builder_.set_emergency_active(merged_emergency);
 }
 

@@ -272,6 +272,7 @@ private:
   // robeff_msgs subscription
   rclcpp::Subscription<robeff_msgs::msg::TabletFeedback>::SharedPtr tablet_feedback_sub_;
   rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr sick_zone_sub_;
+  rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr primitive_zone_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr primitive_emergency_detector_sub_;
 
   // From Autoware
@@ -318,6 +319,7 @@ private:
   void tablet_feedback_callback(const robeff_msgs::msg::TabletFeedback::ConstSharedPtr msg);
   void vehicle_status_callback(const robeff_msgs::msg::VehicleStatus::ConstSharedPtr msg);
   void sick_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
+  void primitive_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
   void primitive_emergency_detector_callback(const std_msgs::msg::Bool::ConstSharedPtr msg);
   void update_merged_emergency_state();
 
@@ -355,6 +357,7 @@ private:
   bool emergency_from_vehicle_cmd_{false};
   bool emergency_from_primitive_detector_raw_{false};
   bool is_sick_zone_deactivated_{false};
+  bool is_primitive_zone_deactivated_{false};
 
   rclcpp::Duration horn_duration_{0, 0};
   rclcpp::Time horn_end_time_{0, 0, RCL_ROS_TIME};
