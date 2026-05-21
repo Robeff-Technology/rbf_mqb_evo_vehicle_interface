@@ -288,6 +288,10 @@ void RobioneVehicleInterface::route_state_callback(
 
   if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::ARRIVED) {
     is_arrived_triggered_ = true;
+
+    if (serial_is_open_) {
+      serial_port_.write("*CMD0#", sizeof("*CMD0#") - 1);
+    }
   }
 }
 
