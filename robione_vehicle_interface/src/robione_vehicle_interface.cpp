@@ -422,16 +422,22 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 
 void RobioneVehicleInterface::task_20ms()
 {
-  if(is_route_set_triggered_ && is_horn_on_route_) {
-    if (horn_duration_.nanoseconds() > 0) {
-      horn_active_ = true;
-      horn_end_time_ = now() + horn_duration_;
-      vcu_ctrl_cmd_si_builder_.set_horn(true);
-    } else {
-      vcu_ctrl_cmd_si_builder_.set_horn(false);
-    }
-    is_route_set_triggered_ = false;
+  if(is_route_set_ && is_horn_on_route_) {
+    horn_active_ = true;
+    vcu_ctrl_cmd_si_builder_.set_horn(true);
+    horn_end_time_ = now() + rclcpp::Duration::from_seconds(1.0);  // Keep horn on for 1 second after route is set
+
+    // if (horn_duration_.nanoseconds() > 0) {
+    //   horn_active_ = true;
+    //   horn_end_time_ = now() + horn_duration_;
+    //   vcu_ctrl_cmd_si_builder_.set_horn(true);
+    // } else {
+    //   vcu_ctrl_cmd_si_builder_.set_horn(false);
+    // }
+    // is_route_set_triggered_ = false;
   }
+
+
   if (is_arrived_triggered_ && !horn_active_) {
     if (horn_duration_.nanoseconds() > 0) {
       horn_active_ = true;

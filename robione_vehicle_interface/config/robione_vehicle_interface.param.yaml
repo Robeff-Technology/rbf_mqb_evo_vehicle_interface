@@ -9,5 +9,5 @@
     expected_vehicle_emergency_cmd_hz: 33.0
     expected_vcu_stat_motion_hz: 0.0
     expected_vcu_stat_vehicle_state_hz: 0.0
-    horn_duration_s: 10.0
+    horn_duration_s: 5.0
     is_horn_on_route: true
