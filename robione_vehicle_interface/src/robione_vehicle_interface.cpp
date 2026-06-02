@@ -404,10 +404,6 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
   }
-  else
-  {
-    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
-  }
 
   if (!any_seen) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "No commands received yet");
@@ -439,18 +435,24 @@ void RobioneVehicleInterface::task_20ms()
 
 
   if (is_arrived_triggered_ && !horn_active_) {
+    if (arrived_state_end_)
+    {
+      horn_active_ = false;
+      is_arrived_triggered_ = false;
+      arrived_state_end_ = false;
+      vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
+    }
     if (horn_duration_.nanoseconds() > 0) {
       horn_active_ = true;
       horn_end_time_ = now() + horn_duration_;
       vcu_ctrl_cmd_si_builder_.set_horn(true);
     } else {
       vcu_ctrl_cmd_si_builder_.set_horn(false);
+      arrived_state_end_ = true;
     }
-    is_arrived_triggered_ = false;
   }
 
   if (horn_active_ && now() >= horn_end_time_) {
-    horn_active_ = false;
     vcu_ctrl_cmd_si_builder_.set_horn(false);
   }
   if (is_sick_zone_deactivated_ || rain_mode_) {
