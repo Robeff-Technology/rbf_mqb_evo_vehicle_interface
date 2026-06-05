@@ -278,12 +278,11 @@ void RobioneVehicleInterface::route_state_callback(
   const autoware_adapi_v1_msgs::msg::RouteState::ConstSharedPtr msg)
 {
   if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::SET) {
-    is_route_set_triggered_ = true;
-    is_route_set_ = true;
     RCLCPP_INFO(this->get_logger(), "Route state is SET");
+    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
+    vcu_ctrl_cmd_si_builder_.set_horn(is_horn_on_route_);
   } else {
-    is_route_set_triggered_ = false;
-    is_route_set_ = false;
+    vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
     RCLCPP_INFO(this->get_logger(), "Route state is not SET");
   }
 
@@ -396,15 +395,12 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   const bool any_seen = cmd_rate_monitor_.any_seen();
-  
-
   // Autonomous enable is not getting updated even the is_route_set_triggered_ is true
   // No problem at autoware side
   if (is_route_set_)
   {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
   }
-
   if (!any_seen) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "No commands received yet");
     vcu_ctrl_cmd_si_builder_.set_autoware_comm_fault(true);
@@ -418,20 +414,20 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 
 void RobioneVehicleInterface::task_20ms()
 {
-  if(is_route_set_ && is_horn_on_route_) {
-    horn_active_ = true;
-    vcu_ctrl_cmd_si_builder_.set_horn(true);
-    horn_end_time_ = now() + rclcpp::Duration::from_seconds(1.0);  // Keep horn on for 1 second after route is set
+  // if(is_route_set_triggered_ && is_horn_on_route_) {
+  //   horn_active_ = true;
+  //   vcu_ctrl_cmd_si_builder_.set_horn(true);
+  //   horn_end_time_ = now() + rclcpp::Duration::from_seconds(1.0);  // Keep horn on for 1 second after route is set
+  //   is_route_set_triggered_ = false;
 
-    // if (horn_duration_.nanoseconds() > 0) {
-    //   horn_active_ = true;
-    //   horn_end_time_ = now() + horn_duration_;
-    //   vcu_ctrl_cmd_si_builder_.set_horn(true);
-    // } else {
-    //   vcu_ctrl_cmd_si_builder_.set_horn(false);
-    // }
-    // is_route_set_triggered_ = false;
-  }
+  //   // if (horn_duration_.nanoseconds() > 0) {
+  //   //   horn_active_ = true;
+  //   //   horn_end_time_ = now() + horn_duration_;
+  //   //   vcu_ctrl_cmd_si_builder_.set_horn(true);
+  //   // } else {
+  //   //   vcu_ctrl_cmd_si_builder_.set_horn(false);
+  //   // }
+  // }
 
 
   if (is_arrived_triggered_ && !horn_active_) {
