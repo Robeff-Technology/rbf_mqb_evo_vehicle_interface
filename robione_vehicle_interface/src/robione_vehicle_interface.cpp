@@ -279,9 +279,11 @@ void RobioneVehicleInterface::route_state_callback(
 {
   if (msg->state == autoware_adapi_v1_msgs::msg::RouteState::SET) {
     RCLCPP_INFO(this->get_logger(), "Route state is SET");
+    is_route_set_ = true;
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
     vcu_ctrl_cmd_si_builder_.set_horn(is_horn_on_route_);
   } else {
+    is_route_set_ = false;
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
     RCLCPP_INFO(this->get_logger(), "Route state is not SET");
   }
@@ -399,8 +401,8 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
   diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   const bool any_seen = cmd_rate_monitor_.any_seen();
-  // Autonomous enable is not getting updated even the is_route_set_triggered_ is true
-  // No problem at autoware side
+  // Re-assert autonomous enable periodically while route is set,
+  // in case it was cleared during a transient state.
   if (is_route_set_)
   {
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
