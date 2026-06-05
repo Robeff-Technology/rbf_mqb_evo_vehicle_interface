@@ -281,6 +281,7 @@ void RobioneVehicleInterface::route_state_callback(
     RCLCPP_INFO(this->get_logger(), "Route state is SET");
     is_route_set_ = true;
     vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
+    horn_active_ = is_horn_on_route_;
     vcu_ctrl_cmd_si_builder_.set_horn(is_horn_on_route_);
   } else {
     is_route_set_ = false;
@@ -420,22 +421,31 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 
 void RobioneVehicleInterface::task_20ms()
 {
+  if (is_route_set_)
+  {
+    horn_active_ = is_horn_on_route_;
+    vcu_ctrl_cmd_si_builder_.set_horn(is_horn_on_route_);
+  }
 
   if (is_arrived_triggered_ && !horn_active_) {
     if (horn_duration_.nanoseconds() > 0) {
       horn_active_ = true;
       horn_end_time_ = now() + horn_duration_;
       vcu_ctrl_cmd_si_builder_.set_horn(true);
-    } else {
+    } 
+    else {
+      horn_active_ = false;
       vcu_ctrl_cmd_si_builder_.set_horn(false);
     }
     is_arrived_triggered_ = false;
   }
 
-  if (horn_active_ && now() >= horn_end_time_) {
+  if (horn_active_ && now() >= horn_end_time_ && !is_route_set_) {
     vcu_ctrl_cmd_si_builder_.set_horn(false);
     horn_active_ = false;
   }
+
+
   if (is_sick_zone_deactivated_ || rain_mode_) {
     vcu_ctrl_cmd_si_builder_.set_safety_disable(true);
   } else {
