@@ -414,42 +414,21 @@ void RobioneVehicleInterface::diagnostic_cmd_rate_callback(
 
 void RobioneVehicleInterface::task_20ms()
 {
-  // if(is_route_set_triggered_ && is_horn_on_route_) {
-  //   horn_active_ = true;
-  //   vcu_ctrl_cmd_si_builder_.set_horn(true);
-  //   horn_end_time_ = now() + rclcpp::Duration::from_seconds(1.0);  // Keep horn on for 1 second after route is set
-  //   is_route_set_triggered_ = false;
-
-  //   // if (horn_duration_.nanoseconds() > 0) {
-  //   //   horn_active_ = true;
-  //   //   horn_end_time_ = now() + horn_duration_;
-  //   //   vcu_ctrl_cmd_si_builder_.set_horn(true);
-  //   // } else {
-  //   //   vcu_ctrl_cmd_si_builder_.set_horn(false);
-  //   // }
-  // }
-
 
   if (is_arrived_triggered_ && !horn_active_) {
-    if (arrived_state_end_)
-    {
-      horn_active_ = false;
-      is_arrived_triggered_ = false;
-      arrived_state_end_ = false;
-      vcu_ctrl_cmd_si_builder_.set_autonomous_enable(false);
-    }
     if (horn_duration_.nanoseconds() > 0) {
       horn_active_ = true;
       horn_end_time_ = now() + horn_duration_;
       vcu_ctrl_cmd_si_builder_.set_horn(true);
     } else {
       vcu_ctrl_cmd_si_builder_.set_horn(false);
-      arrived_state_end_ = true;
     }
+    is_arrived_triggered_ = false;
   }
 
   if (horn_active_ && now() >= horn_end_time_) {
     vcu_ctrl_cmd_si_builder_.set_horn(false);
+    horn_active_ = false;
   }
   if (is_sick_zone_deactivated_ || rain_mode_) {
     vcu_ctrl_cmd_si_builder_.set_safety_disable(true);
