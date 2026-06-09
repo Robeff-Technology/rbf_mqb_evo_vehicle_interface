@@ -46,7 +46,9 @@
 #include <robeff_msgs/msg/sick_zone.hpp>
 #include <robeff_msgs/msg/tablet_feedback.hpp>
 #include <robeff_msgs/msg/vehicle_status.hpp>
+#include <sick_safetyscanners2_interfaces/msg/output_paths.hpp>
 #include <std_msgs/msg/bool.hpp>
+#include <autoware_internal_planning_msgs/msg/velocity_limit.hpp>
 #include <tier4_control_msgs/msg/gate_mode.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_command_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/actuation_status_stamped.hpp>
@@ -275,6 +277,10 @@ private:
   rclcpp::Subscription<robeff_msgs::msg::SickZone>::SharedPtr primitive_zone_sub_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr primitive_emergency_detector_sub_;
 
+  // Sick safety scanner output paths subscription
+  rclcpp::Subscription<sick_safetyscanners2_interfaces::msg::OutputPaths>::SharedPtr
+    sick_output_paths_sub_;
+
   // From Autoware
   rclcpp::Subscription<autoware_control_msgs::msg::Control>::SharedPtr control_cmd_sub_;
   rclcpp::Subscription<autoware_vehicle_msgs::msg::GearCommand>::SharedPtr gear_cmd_sub_;
@@ -305,6 +311,13 @@ private:
     steering_wheel_status_pub_;
   rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_pub_;
 
+  // External velocity limit publisher for SICK yellow field.
+  // Publishes on the same topic the RViz slider uses
+  // (/planning/scenario_planning/max_velocity_default), because
+  // behavior_velocity_planner subscribes to it directly.
+  rclcpp::Publisher<autoware_internal_planning_msgs::msg::VelocityLimit>::SharedPtr
+    velocity_limit_pub_;
+
   // Callbacks
   void rain_mode_callback(const std_msgs::msg::Bool::SharedPtr msg);
   void control_cmd_callback(const autoware_control_msgs::msg::Control::SharedPtr msg);
@@ -321,6 +334,8 @@ private:
   void sick_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
   void primitive_zone_callback(const robeff_msgs::msg::SickZone::ConstSharedPtr msg);
   void primitive_emergency_detector_callback(const std_msgs::msg::Bool::ConstSharedPtr msg);
+  void sick_output_paths_callback(
+    const sick_safetyscanners2_interfaces::msg::OutputPaths::ConstSharedPtr msg);
   void update_merged_emergency_state();
 
     // Init helpers
@@ -356,8 +371,10 @@ private:
   bool is_restricted_area_detect_ = false;
   bool emergency_from_vehicle_cmd_{false};
   bool emergency_from_primitive_detector_raw_{false};
-  bool is_sick_zone_deactivated_{false};
-  bool is_primitive_zone_deactivated_{false};
+  bool is_sick_deactivated{false};
+  bool is_primitive_deactivated{false};
+  double yellow_field_velocity_{0.0};
+  bool sick_yellow_field_active_{false};
 
   rclcpp::Duration horn_duration_{0, 0};
   rclcpp::Time horn_end_time_{0, 0, RCL_ROS_TIME};

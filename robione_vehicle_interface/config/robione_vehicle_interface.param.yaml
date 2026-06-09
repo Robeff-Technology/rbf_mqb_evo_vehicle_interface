@@ -2,6 +2,7 @@
   ros__parameters:
     base_frame_id: "base_link"
     serial_port: "/dev/call_system"
+
     expected_control_cmd_hz: 33.0
     expected_gear_cmd_hz: 0.0
     expected_turn_indicators_cmd_hz: 0.0
@@ -9,5 +10,11 @@
     expected_vehicle_emergency_cmd_hz: 33.0
     expected_vcu_stat_motion_hz: 0.0
     expected_vcu_stat_vehicle_state_hz: 0.0
+
     horn_duration_s: 30.0
     is_horn_on_route: true
+
+    # Sick parameters
+    # Velocity (m/s) applied while the SICK yellow field is intruded.
+    # 0.833 m/s ~ 3 km/h.
+    yellow_field_velocity: 0.833

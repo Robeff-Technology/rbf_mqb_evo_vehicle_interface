@@ -26,6 +26,8 @@
   <depend>geometry_msgs</depend>
   <depend>robeff_msgs</depend>
   <depend>robione_vehicle_interface_msgs</depend>
+  <depend>sick_safetyscanners2_interfaces</depend>
+  <depend>autoware_internal_planning_msgs</depend>
   
 
   <test_depend>ament_lint_auto</test_depend>

@@ -26,6 +26,7 @@ RobioneVehicleInterface::RobioneVehicleInterface(const rclcpp::NodeOptions & opt
 {
   is_horn_on_route_ = params_.get_or<bool>("is_horn_on_route", true);
   horn_duration_ = rclcpp::Duration::from_seconds(params_.get_or<double>("horn_duration_s", 10.0));
+  yellow_field_velocity_ = params_.get_or<double>("yellow_field_velocity", 3.0);
   params_.print_loaded_parameters();
   diag_updater_.setHardwareID("robione_vehicle_interface");
   diag_updater_.add("Serial Status", this, &RobioneVehicleInterface::diagnostic_serial_callback);
@@ -124,6 +125,12 @@ void RobioneVehicleInterface::init_subscribers()
     std::bind(
       &RobioneVehicleInterface::primitive_emergency_detector_callback, this,
       std::placeholders::_1));
+
+  sick_output_paths_sub_ =
+    this->create_subscription<sick_safetyscanners2_interfaces::msg::OutputPaths>(
+      "/output_paths", rclcpp::QoS(1),
+      std::bind(
+        &RobioneVehicleInterface::sick_output_paths_callback, this, std::placeholders::_1));
 }
 
 void RobioneVehicleInterface::init_publishers()
@@ -150,6 +157,13 @@ void RobioneVehicleInterface::init_publishers()
       "/vehicle/status/steering_wheel_status", rclcpp::QoS(10).reliable());
   vehicle_status_pub_ = create_publisher<robeff_msgs::msg::VehicleStatus>(
     "/robione_vehicle_interface/vehicle_status", rclcpp::QoS(10).reliable());
+
+  // External velocity limit for SICK yellow field (Autoware planning input).
+  // Use transient_local so the planner picks up the latest limit even if it
+  // subscribes after publication.
+  const auto vel_limit_qos = rclcpp::QoS(1).transient_local();
+  velocity_limit_pub_ = create_publisher<autoware_internal_planning_msgs::msg::VelocityLimit>(
+    "~/output/velocity_limit", vel_limit_qos);
 }
 
 bool RobioneVehicleInterface::openSerialFromConfig()
@@ -313,13 +327,13 @@ void RobioneVehicleInterface::tablet_feedback_callback(
 void RobioneVehicleInterface::sick_zone_callback(
   const robeff_msgs::msg::SickZone::ConstSharedPtr msg)
 {
-  is_sick_zone_deactivated_ = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
+  is_sick_deactivated = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
 }
 
 void RobioneVehicleInterface::primitive_zone_callback(
   const robeff_msgs::msg::SickZone::ConstSharedPtr msg)
 {
-  is_primitive_zone_deactivated_ = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
+  is_primitive_deactivated = (msg && msg->state == robeff_msgs::msg::SickZone::DEACTIVATE);
 }
 
 void RobioneVehicleInterface::primitive_emergency_detector_callback(
@@ -329,10 +343,39 @@ void RobioneVehicleInterface::primitive_emergency_detector_callback(
   update_merged_emergency_state();
 }
 
+void RobioneVehicleInterface::sick_output_paths_callback(
+  const sick_safetyscanners2_interfaces::msg::OutputPaths::ConstSharedPtr msg)
+{
+  if (!msg || msg->status.size() < 2) {
+    return;
+  }
+  // SICK convention: status[0] == 1 means the yellow field is clear (default).
+  // When it becomes 0, an object has intruded the yellow field and we must
+  // slow the vehicle down.
+  const bool yellow_active = !msg->status[0];
+  if (yellow_active == sick_yellow_field_active_) {
+    return;  // No state change; the previously-published latched value still holds.
+  }
+  sick_yellow_field_active_ = yellow_active;
+
+  // Edge-triggered: publish exactly once per transition. When the yellow field
+  // clears, we publish a sentinel value larger than any sane Autoware default;
+  // velocity_smoother's own max_velocity parameter caps the actual speed.
+  static constexpr float kNoLimitVelocity = 100.0f;  // m/s, effectively "no limit"
+  autoware_internal_planning_msgs::msg::VelocityLimit limit;
+  limit.stamp = now();
+  limit.max_velocity = sick_yellow_field_active_
+                         ? static_cast<float>(yellow_field_velocity_)
+                         : kNoLimitVelocity;
+  limit.use_constraints = false;
+  limit.sender = "robione_vehicle_interface/sick_yellow_field";
+  velocity_limit_pub_->publish(limit);
+}
+
 void RobioneVehicleInterface::update_merged_emergency_state()
 {
-  const bool sick_emergency = emergency_from_vehicle_cmd_ && !is_sick_zone_deactivated_;
-  const bool primitive_emergency = emergency_from_primitive_detector_raw_ && !is_primitive_zone_deactivated_;
+  const bool sick_emergency = emergency_from_vehicle_cmd_ && !is_sick_deactivated;
+  const bool primitive_emergency = emergency_from_primitive_detector_raw_ && !is_primitive_deactivated;
   const bool merged_emergency = sick_emergency || primitive_emergency;
   vcu_ctrl_cmd_si_builder_.set_emergency_active(merged_emergency);
 }
@@ -446,7 +489,7 @@ void RobioneVehicleInterface::task_20ms()
   }
 
 
-  if (is_sick_zone_deactivated_ || rain_mode_) {
+  if (is_sick_deactivated || rain_mode_) {
     vcu_ctrl_cmd_si_builder_.set_safety_disable(true);
   } else {
     vcu_ctrl_cmd_si_builder_.set_safety_disable(false);
