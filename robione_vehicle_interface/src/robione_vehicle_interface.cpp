@@ -349,10 +349,10 @@ void RobioneVehicleInterface::sick_output_paths_callback(
   if (!msg || msg->status.size() < 2) {
     return;
   }
-  // SICK convention: status[0] == 1 means the yellow field is clear (default).
+  // SICK convention: status[1] == 1 means the yellow field is clear (default).
   // When it becomes 0, an object has intruded the yellow field and we must
   // slow the vehicle down.
-  const bool yellow_active = !msg->status[0];
+  const bool yellow_active = !msg->status[1];
   if (yellow_active == sick_yellow_field_active_) {
     return;  // No state change; the previously-published latched value still holds.
   }
