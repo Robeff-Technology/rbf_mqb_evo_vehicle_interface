@@ -311,6 +311,8 @@ private:
     steering_wheel_status_pub_;
   rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_pub_;
 
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr bm_charging_pub_;
+
   // External velocity limit publisher for SICK yellow field.
   // Publishes on the same topic the RViz slider uses
   // (/planning/scenario_planning/max_velocity_default), because

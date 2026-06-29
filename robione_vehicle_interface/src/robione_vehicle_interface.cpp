@@ -161,6 +161,9 @@ void RobioneVehicleInterface::init_publishers()
   // External velocity limit for SICK yellow field (Autoware planning input).
   // Use transient_local so the planner picks up the latest limit even if it
   // subscribes after publication.
+  bm_charging_pub_ = create_publisher<std_msgs::msg::Bool>(
+    "/vehicle/status/bm_charging", rclcpp::QoS(5).reliable());
+
   const auto vel_limit_qos = rclcpp::QoS(1).transient_local();
   velocity_limit_pub_ = create_publisher<autoware_internal_planning_msgs::msg::VelocityLimit>(
     "~/output/velocity_limit", vel_limit_qos);
@@ -234,6 +237,10 @@ void RobioneVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedP
       vcu_stat_publisher_.update_dtc_status_1(raw);
     } else if (rec_id == MCU_MODULE_STATUS_CANID) {
       vcu_stat_publisher_.update_mcu_status(pc_vcu_rx_.MCU_MODULE_STATUS);
+    } else if (rec_id == BATTERY_STATUS_CANID) {
+      std_msgs::msg::Bool charging_msg;
+      charging_msg.data = static_cast<bool>(pc_vcu_rx_.BATTERY_STATUS.BM_Charging);
+      bm_charging_pub_->publish(charging_msg);
     }
   }
 
