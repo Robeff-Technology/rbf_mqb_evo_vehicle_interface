@@ -474,6 +474,132 @@ typedef struct
 
 } SAFETY_MANAGER_STATUS_t;
 
+// def @BATTERY_STATUS CAN Message (332001 0x510e1)
+#define BATTERY_STATUS_IDE (1U)
+#define BATTERY_STATUS_DLC (8U)
+#define BATTERY_STATUS_CANID (0x510e1U)
+
+// Value tables for @BM_Charging signal
+
+#ifndef BM_Charging_BATTERY_STATUS_NOT_CHARGING
+#define BM_Charging_BATTERY_STATUS_NOT_CHARGING (0)
+#endif
+
+#ifndef BM_Charging_BATTERY_STATUS_CHARGING
+#define BM_Charging_BATTERY_STATUS_CHARGING (1)
+#endif
+
+
+// Value tables for @BM_Status signal
+
+#ifndef BM_Status_BATTERY_STATUS_BATTERY_MODULE_IDLE
+#define BM_Status_BATTERY_STATUS_BATTERY_MODULE_IDLE (0)
+#endif
+
+#ifndef BM_Status_BATTERY_STATUS_BATTERY_MODULE_ACTIVE
+#define BM_Status_BATTERY_STATUS_BATTERY_MODULE_ACTIVE (1)
+#endif
+
+#ifndef BM_Status_BATTERY_STATUS_BATTERY_MODULE_ERROR
+#define BM_Status_BATTERY_STATUS_BATTERY_MODULE_ERROR (2)
+#endif
+
+// signal: @BM_Temperature_ro
+#define PC_VCU_BM_Temperature_ro_CovFactor (1)
+#define PC_VCU_BM_Temperature_ro_toS(x) ( (int8_t) ((x) - (-50)) )
+#define PC_VCU_BM_Temperature_ro_fromS(x) ( ((x) + (-50)) )
+
+// Value tables for @BM_RemainingTimeToCharge signal
+
+#ifndef BM_RemainingTimeToCharge_BATTERY_STATUS_CALCULATION_ERROR
+#define BM_RemainingTimeToCharge_BATTERY_STATUS_CALCULATION_ERROR (65535)
+#endif
+
+// signal: @BM_Power_ro
+#define PC_VCU_BM_Power_ro_CovFactor (0.01)
+#define PC_VCU_BM_Power_ro_toS(x) ( (int16_t) (((x) - (0.0)) / (0.01)) )
+#define PC_VCU_BM_Power_ro_fromS(x) ( (((x) * (0.01)) + (0.0)) )
+
+typedef struct
+{
+#ifdef PC_VCU_USE_BITS_SIGNAL
+
+  //  0 : "NOT_CHARGING"
+  //  1 : "CHARGING"
+  uint8_t BM_Charging : 1;                   //      Bits= 1 Unit:'-'
+
+  uint8_t BM_CommFault : 1;                  //      Bits= 1 Unit:'-'
+
+  uint8_t BM_InternalFault : 1;              //      Bits= 1 Unit:'-'
+
+  //  0 : "BATTERY_MODULE_IDLE"
+  //  1 : "BATTERY_MODULE_ACTIVE"
+  //  2 : "BATTERY_MODULE_ERROR"
+  uint8_t BM_Status : 2;                     //      Bits= 2 Unit:'-'
+
+  uint8_t BM_FramePeriod;                    //      Bits= 8 Unit:'-'
+
+  uint8_t BM_SOC;                            //      Bits= 8 Unit:'%'
+
+  int8_t BM_Temperature_ro;                  //  [-] Bits= 8 Offset= -50                Unit:'-'
+
+#ifdef PC_VCU_USE_SIGFLOAT
+  int16_t BM_Temperature_phys;
+#endif // PC_VCU_USE_SIGFLOAT
+
+  //  65535 : "CALCULATION_ERROR"
+  uint16_t BM_RemainingTimeToCharge;         //      Bits=16 Unit:'minute'
+
+  int16_t BM_Power_ro;                       //  [-] Bits=16 Factor= 0.01            Unit:'-'
+
+#ifdef PC_VCU_USE_SIGFLOAT
+  sigfloat_t BM_Power_phys;
+#endif // PC_VCU_USE_SIGFLOAT
+
+#else
+
+  //  0 : "NOT_CHARGING"
+  //  1 : "CHARGING"
+  uint8_t BM_Charging;                       //      Bits= 1 Unit:'-'
+
+  uint8_t BM_CommFault;                      //      Bits= 1 Unit:'-'
+
+  uint8_t BM_InternalFault;                  //      Bits= 1 Unit:'-'
+
+  //  0 : "BATTERY_MODULE_IDLE"
+  //  1 : "BATTERY_MODULE_ACTIVE"
+  //  2 : "BATTERY_MODULE_ERROR"
+  uint8_t BM_Status;                         //      Bits= 2 Unit:'-'
+
+  uint8_t BM_FramePeriod;                    //      Bits= 8 Unit:'-'
+
+  uint8_t BM_SOC;                            //      Bits= 8 Unit:'%'
+
+  int8_t BM_Temperature_ro;                  //  [-] Bits= 8 Offset= -50                Unit:'-'
+
+#ifdef PC_VCU_USE_SIGFLOAT
+  int16_t BM_Temperature_phys;
+#endif // PC_VCU_USE_SIGFLOAT
+
+  //  65535 : "CALCULATION_ERROR"
+  uint16_t BM_RemainingTimeToCharge;         //      Bits=16 Unit:'minute'
+
+  int16_t BM_Power_ro;                       //  [-] Bits=16 Factor= 0.01            Unit:'-'
+
+#ifdef PC_VCU_USE_SIGFLOAT
+  sigfloat_t BM_Power_phys;
+#endif // PC_VCU_USE_SIGFLOAT
+
+#endif // PC_VCU_USE_BITS_SIGNAL
+
+#ifdef PC_VCU_USE_DIAG_MONITORS
+
+  FrameMonitor_t mon1;
+
+#endif // PC_VCU_USE_DIAG_MONITORS
+
+} BATTERY_STATUS_t;
+
 // def @VCU_CTRL_CMD_SI CAN Message (67764225 0x40a0001)
 #define VCU_CTRL_CMD_SI_IDE (1U)
 #define VCU_CTRL_CMD_SI_DLC (8U)
@@ -1321,6 +1447,13 @@ uint32_t Unpack_SAFETY_MANAGER_STATUS_pc_vcu(SAFETY_MANAGER_STATUS_t* _m, const 
 uint32_t Pack_SAFETY_MANAGER_STATUS_pc_vcu(SAFETY_MANAGER_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe);
 #else
 uint32_t Pack_SAFETY_MANAGER_STATUS_pc_vcu(SAFETY_MANAGER_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
+#endif // PC_VCU_USE_CANSTRUCT
+
+uint32_t Unpack_BATTERY_STATUS_pc_vcu(BATTERY_STATUS_t* _m, const uint8_t* _d, uint8_t dlc_);
+#ifdef PC_VCU_USE_CANSTRUCT
+uint32_t Pack_BATTERY_STATUS_pc_vcu(BATTERY_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe);
+#else
+uint32_t Pack_BATTERY_STATUS_pc_vcu(BATTERY_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
 #endif // PC_VCU_USE_CANSTRUCT
 
 uint32_t Unpack_VCU_CTRL_CMD_SI_pc_vcu(VCU_CTRL_CMD_SI_t* _m, const uint8_t* _d, uint8_t dlc_);

@@ -122,6 +122,90 @@ uint32_t Pack_SAFETY_MANAGER_STATUS_pc_vcu(SAFETY_MANAGER_STATUS_t* _m, uint8_t*
 
 #endif // PC_VCU_USE_CANSTRUCT
 
+uint32_t Unpack_BATTERY_STATUS_pc_vcu(BATTERY_STATUS_t* _m, const uint8_t* _d, uint8_t dlc_)
+{
+  (void)dlc_;
+  _m->BM_Charging = (uint8_t) ( (_d[0] & (0x01U)) );
+  _m->BM_CommFault = (uint8_t) ( ((_d[0] >> 1U) & (0x01U)) );
+  _m->BM_InternalFault = (uint8_t) ( ((_d[0] >> 2U) & (0x01U)) );
+  _m->BM_Status = (uint8_t) ( ((_d[0] >> 3U) & (0x03U)) );
+  _m->BM_FramePeriod = (uint8_t) ( (_d[1] & (0xFFU)) );
+  _m->BM_SOC = (uint8_t) ( (_d[2] & (0xFFU)) );
+  _m->BM_Temperature_ro = (int8_t) __ext_sig__(( (_d[3] & (0xFFU)) ), 8);
+#ifdef PC_VCU_USE_SIGFLOAT
+  _m->BM_Temperature_phys = (int16_t) PC_VCU_BM_Temperature_ro_fromS(_m->BM_Temperature_ro);
+#endif // PC_VCU_USE_SIGFLOAT
+
+  _m->BM_RemainingTimeToCharge = (uint16_t) ( ((_d[5] & (0xFFU)) << 8U) | (_d[4] & (0xFFU)) );
+  _m->BM_Power_ro = (int16_t) __ext_sig__(( ((_d[7] & (0xFFU)) << 8U) | (_d[6] & (0xFFU)) ), 16);
+#ifdef PC_VCU_USE_SIGFLOAT
+  _m->BM_Power_phys = (sigfloat_t)(PC_VCU_BM_Power_ro_fromS(_m->BM_Power_ro));
+#endif // PC_VCU_USE_SIGFLOAT
+
+#ifdef PC_VCU_USE_DIAG_MONITORS
+  _m->mon1.dlc_error = (dlc_ < BATTERY_STATUS_DLC);
+  _m->mon1.last_cycle = GetSystemTick();
+  _m->mon1.frame_cnt++;
+
+  FMon_BATTERY_STATUS_pc_vcu(&_m->mon1, BATTERY_STATUS_CANID);
+#endif // PC_VCU_USE_DIAG_MONITORS
+
+  return BATTERY_STATUS_CANID;
+}
+
+#ifdef PC_VCU_USE_CANSTRUCT
+
+uint32_t Pack_BATTERY_STATUS_pc_vcu(BATTERY_STATUS_t* _m, __CoderDbcCanFrame_t__* cframe)
+{
+  uint8_t i; for (i = 0u; i < PC_VCU_VALIDATE_DLC(BATTERY_STATUS_DLC); cframe->Data[i++] = PC_VCU_INITIAL_BYTE_VALUE);
+
+#ifdef PC_VCU_USE_SIGFLOAT
+  _m->BM_Temperature_ro = (int8_t) PC_VCU_BM_Temperature_ro_toS(_m->BM_Temperature_phys);
+  _m->BM_Power_ro = (int16_t) PC_VCU_BM_Power_ro_toS(_m->BM_Power_phys);
+#endif // PC_VCU_USE_SIGFLOAT
+
+  cframe->Data[0] |= (uint8_t) ( (_m->BM_Charging & (0x01U)) | ((_m->BM_CommFault & (0x01U)) << 1U) | ((_m->BM_InternalFault & (0x01U)) << 2U) | ((_m->BM_Status & (0x03U)) << 3U) );
+  cframe->Data[1] |= (uint8_t) ( (_m->BM_FramePeriod & (0xFFU)) );
+  cframe->Data[2] |= (uint8_t) ( (_m->BM_SOC & (0xFFU)) );
+  cframe->Data[3] |= (uint8_t) ( (_m->BM_Temperature_ro & (0xFFU)) );
+  cframe->Data[4] |= (uint8_t) ( (_m->BM_RemainingTimeToCharge & (0xFFU)) );
+  cframe->Data[5] |= (uint8_t) ( ((_m->BM_RemainingTimeToCharge >> 8U) & (0xFFU)) );
+  cframe->Data[6] |= (uint8_t) ( (_m->BM_Power_ro & (0xFFU)) );
+  cframe->Data[7] |= (uint8_t) ( ((_m->BM_Power_ro >> 8U) & (0xFFU)) );
+
+  cframe->MsgId = (uint32_t) BATTERY_STATUS_CANID;
+  cframe->DLC = (uint8_t) BATTERY_STATUS_DLC;
+  cframe->IDE = (uint8_t) BATTERY_STATUS_IDE;
+  return BATTERY_STATUS_CANID;
+}
+
+#else
+
+uint32_t Pack_BATTERY_STATUS_pc_vcu(BATTERY_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide)
+{
+  uint8_t i; for (i = 0u; i < PC_VCU_VALIDATE_DLC(BATTERY_STATUS_DLC); _d[i++] = PC_VCU_INITIAL_BYTE_VALUE);
+
+#ifdef PC_VCU_USE_SIGFLOAT
+  _m->BM_Temperature_ro = (int8_t) PC_VCU_BM_Temperature_ro_toS(_m->BM_Temperature_phys);
+  _m->BM_Power_ro = (int16_t) PC_VCU_BM_Power_ro_toS(_m->BM_Power_phys);
+#endif // PC_VCU_USE_SIGFLOAT
+
+  _d[0] |= (uint8_t) ( (_m->BM_Charging & (0x01U)) | ((_m->BM_CommFault & (0x01U)) << 1U) | ((_m->BM_InternalFault & (0x01U)) << 2U) | ((_m->BM_Status & (0x03U)) << 3U) );
+  _d[1] |= (uint8_t) ( (_m->BM_FramePeriod & (0xFFU)) );
+  _d[2] |= (uint8_t) ( (_m->BM_SOC & (0xFFU)) );
+  _d[3] |= (uint8_t) ( (_m->BM_Temperature_ro & (0xFFU)) );
+  _d[4] |= (uint8_t) ( (_m->BM_RemainingTimeToCharge & (0xFFU)) );
+  _d[5] |= (uint8_t) ( ((_m->BM_RemainingTimeToCharge >> 8U) & (0xFFU)) );
+  _d[6] |= (uint8_t) ( (_m->BM_Power_ro & (0xFFU)) );
+  _d[7] |= (uint8_t) ( ((_m->BM_Power_ro >> 8U) & (0xFFU)) );
+
+  *_len = (uint8_t) BATTERY_STATUS_DLC;
+  *_ide = (uint8_t) BATTERY_STATUS_IDE;
+  return BATTERY_STATUS_CANID;
+}
+
+#endif // PC_VCU_USE_CANSTRUCT
+
 uint32_t Unpack_VCU_CTRL_CMD_SI_pc_vcu(VCU_CTRL_CMD_SI_t* _m, const uint8_t* _d, uint8_t dlc_)
 {
   (void)dlc_;
