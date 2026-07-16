@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+  Vehicle interface only (no CAN source). This is the sim-safe launch: it does
+  NOT inject any CAN status, so it publishes /vehicle/status/* only when real
+  frames arrive on /from_can_bus. Safe to run alongside a planning simulation to
+  exercise the command path (Autoware /control/command/* -> /to_can_bus); the
+  simulator keeps ownership of /vehicle/status/*.
+
+  For a standalone CAN->Autoware RX test (with synthetic frames), use
+  test_rx.launch.xml on an isolated ROS_DOMAIN_ID instead.
+-->
+<launch>
+  <arg name="rbf_mqb_evo_vehicle_interface_param_path" default="$(find-pkg-share rbf_mqb_evo_vehicle_interface)/config/rbf_mqb_evo_vehicle_interface.param.yaml"/>
+
+  <!-- Vehicle interface (Autoware <-> CAN) -->
+  <node pkg="rbf_mqb_evo_vehicle_interface" exec="rbf_mqb_evo_vehicle_interface_node" name="rbf_mqb_evo_vehicle_interface" output="both">
+    <param from="$(var rbf_mqb_evo_vehicle_interface_param_path)"/>
+  </node>
+
+</launch>

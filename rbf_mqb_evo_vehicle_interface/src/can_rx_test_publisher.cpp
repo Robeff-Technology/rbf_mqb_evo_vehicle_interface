@@ -1,5 +1,5 @@
-#include "can_interface/pc_vcu.h"
-#include "robione_vehicle_interface/can_msg_builder/crc.hpp"
+#include "can_interface/vehicle_cmd_status_module_dbc.h"
+#include "rbf_mqb_evo_vehicle_interface/can_msg_builder/crc.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -23,7 +23,7 @@ can_msgs::msg::Frame make_motion_frame(
   uint8_t data[8] = {0U};
   uint8_t len = 0U;
   uint8_t ide = 0U;
-  Pack_VCU_STAT_MOTION_SI_pc_vcu(&msg, data, &len, &ide);
+  Pack_VCU_STAT_MOTION_SI_vehicle_cmd_status_module_dbc(&msg, data, &len, &ide);
 
   uint8_t crc = crc8_autosar(data, 7U);
   if (corrupt_crc) {
@@ -40,7 +40,7 @@ can_msgs::msg::Frame make_motion_frame(
 }
 
 can_msgs::msg::Frame make_vehicle_state_frame(
-  uint8_t gear, bool left, bool right, bool hazard, uint8_t control_mode, uint8_t safety_state,
+  uint8_t gear, bool left, bool right, bool hazard, uint8_t control_mode,
   uint8_t alive, bool corrupt_crc)
 {
   VCU_STAT_VEHICLE_STATE_t msg{};
@@ -52,16 +52,13 @@ can_msgs::msg::Frame make_vehicle_state_frame(
   msg.Horn_Stat = 0U;
   msg.Reserved_1 = 0U;
   msg.ControlMode = control_mode;
-  msg.SafetyState = safety_state;
-  msg.BatterySoC = 80U;
-  msg.FaultSummary = 0U;
   msg.AliveCounter = alive;
   msg.CRC8 = 0U;
 
   uint8_t data[8] = {0U};
   uint8_t len = 0U;
   uint8_t ide = 0U;
-  Pack_VCU_STAT_VEHICLE_STATE_pc_vcu(&msg, data, &len, &ide);
+  Pack_VCU_STAT_VEHICLE_STATE_vehicle_cmd_status_module_dbc(&msg, data, &len, &ide);
 
   uint8_t crc = crc8_autosar(data, 7U);
   if (corrupt_crc) {
@@ -125,7 +122,7 @@ private:
     const auto alive = alive_counter_state_;
     const bool corrupt_crc = !good_crc_;
 
-    auto state_frame = make_vehicle_state_frame(2U, true, false, false, 1U, 0U, alive, corrupt_crc);
+    auto state_frame = make_vehicle_state_frame(2U, true, false, false, 1U, alive, corrupt_crc);
     state_frame.header.stamp = now();
     state_frame.header.frame_id = "can";
     publisher_->publish(state_frame);

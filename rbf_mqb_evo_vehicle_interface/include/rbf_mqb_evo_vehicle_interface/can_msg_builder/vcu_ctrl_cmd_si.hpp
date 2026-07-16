@@ -1,8 +1,8 @@
 #pragma once
 
-#include "can_interface/pc_vcu.h"
+#include "can_interface/vehicle_cmd_status_module_dbc.h"
 #include "crc.hpp"
-#include "robione_vehicle_interface/can_msg_builder/can_msg_builder_interface.hpp"
+#include "rbf_mqb_evo_vehicle_interface/can_msg_builder/can_msg_builder_interface.hpp"
 
 #include <algorithm>
 #include <array>
@@ -38,15 +38,10 @@ public:
 
   void set_autonomous_enable(bool enable) { msg_.AutonomousEnable = enable ? 1U : 0U; }
   void set_emergency_active(bool active) { msg_.EmergencyActive = active ? 1U : 0U; }
-  void set_safety_disable(bool disable) { msg_.SafetyDisable = disable ? 1U : 0U; }
 
   void set_gear_req(GearReq gear) { msg_.GearReq = static_cast<uint8_t>(gear); }
   void set_gear_req_raw(uint8_t gear) { msg_.GearReq = gear; }
 
-  void set_turn_left(bool on) { msg_.TurnLeft = on ? 1U : 0U; }
-  void set_turn_right(bool on) { msg_.TurnRight = on ? 1U : 0U; }
-  void set_hazard(bool on) { msg_.Hazard = on ? 1U : 0U; }
-  void set_horn(bool on) { msg_.Horn = on ? 1U : 0U; }
   void set_communication_fault(bool fault)
   {
     autoware_comm_fault_ = fault;
@@ -66,13 +61,7 @@ public:
 
   bool get_autonomous_enable() const { return msg_.AutonomousEnable != 0U; }
   bool get_emergency_active() const { return msg_.EmergencyActive != 0U; }
-  bool get_safety_disable() const { return msg_.SafetyDisable != 0U; }
   uint8_t get_gear_req() const { return msg_.GearReq; }
-
-  bool get_turn_left() const { return msg_.TurnLeft != 0U; }
-  bool get_turn_right() const { return msg_.TurnRight != 0U; }
-  bool get_hazard() const { return msg_.Hazard != 0U; }
-  bool get_horn() const { return msg_.Horn != 0U; }
 
   uint8_t get_alive_counter() const { return msg_.AliveCounter; }
 
@@ -102,14 +91,9 @@ protected:
       msg_.EmergencyActive = 1U;
 
       msg_.GearReq = static_cast<uint8_t>(GearReq::PARK);
-
-      msg_.TurnLeft = 0U;
-      msg_.TurnRight = 0U;
-      msg_.Hazard = 1U;
-      msg_.Horn = 0U;
     }
     // pack without CRC first
-    Pack_VCU_CTRL_CMD_SI_pc_vcu(&msg_, frame_out.data(), &len, &ide);
+    Pack_VCU_CTRL_CMD_SI_vehicle_cmd_status_module_dbc(&msg_, frame_out.data(), &len, &ide);
 
     msg_.Reserved = 0U;
 
@@ -117,7 +101,7 @@ protected:
     msg_.CRC8 = crc8_autosar(frame_out.data(), VCU_CTRL_CMD_SI_DLC - 1U);
 
     // repack including CRC
-    Pack_VCU_CTRL_CMD_SI_pc_vcu(&msg_, frame_out.data(), &len, &ide);
+    Pack_VCU_CTRL_CMD_SI_vehicle_cmd_status_module_dbc(&msg_, frame_out.data(), &len, &ide);
 
     // increment after sending so first frame uses 0
     msg_.AliveCounter = static_cast<uint8_t>((msg_.AliveCounter + 1U) & 0xFFU);

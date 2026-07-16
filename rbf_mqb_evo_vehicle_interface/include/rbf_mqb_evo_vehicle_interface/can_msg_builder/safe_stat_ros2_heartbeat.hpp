@@ -1,8 +1,8 @@
 #pragma once
 
-#include "can_interface/pc_vcu.h"
+#include "can_interface/vehicle_cmd_status_module_dbc.h"
 #include "crc.hpp"
-#include "robione_vehicle_interface/can_msg_builder/can_msg_builder_interface.hpp"
+#include "rbf_mqb_evo_vehicle_interface/can_msg_builder/can_msg_builder_interface.hpp"
 
 #include <array>
 #include <cstdint>
@@ -57,13 +57,13 @@ protected:
     uint8_t ide = 0U;
 
     // pack without CRC first
-    Pack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(&msg_, frame_out.data(), &len, &ide);
+    Pack_SAFE_STAT_ROS2_HEARTBEAT_vehicle_cmd_status_module_dbc(&msg_, frame_out.data(), &len, &ide);
 
     // compute CRC over Byte0..Byte6
     msg_.CRC8 = crc8_autosar(frame_out.data(), SAFE_STAT_ROS2_HEARTBEAT_DLC - 1U);
 
     // repack including CRC
-    Pack_SAFE_STAT_ROS2_HEARTBEAT_pc_vcu(&msg_, frame_out.data(), &len, &ide);
+    Pack_SAFE_STAT_ROS2_HEARTBEAT_vehicle_cmd_status_module_dbc(&msg_, frame_out.data(), &len, &ide);
 
     // increment after sending so first frame uses 0
     msg_.AliveCounter = static_cast<uint8_t>((msg_.AliveCounter + 1U) & 0xFFU);

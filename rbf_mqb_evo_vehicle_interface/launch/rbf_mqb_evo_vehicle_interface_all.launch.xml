@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- Interface -->
-  <include file="$(find-pkg-share robione_vehicle_interface)/launch/robione_vehicle_interface.launch.xml"/>
+  <include file="$(find-pkg-share rbf_mqb_evo_vehicle_interface)/launch/rbf_mqb_evo_vehicle_interface.launch.xml"/>
 
   <!-- Socketcan -->
   <include file="$(find-pkg-share ros2_socketcan)/launch/socket_can_bridge.launch.xml"/>

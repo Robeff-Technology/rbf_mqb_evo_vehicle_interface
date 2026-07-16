@@ -1,9 +1,8 @@
 #pragma once
 
-#include "can_interface/pc_vcu.h"
+#include "can_interface/vehicle_cmd_status_module_dbc.h"
 
 #include <rclcpp/rclcpp.hpp>
-#include <robeff_msgs/msg/vehicle_status.hpp>
 
 #include <autoware_vehicle_msgs/msg/control_mode_report.hpp>
 #include <autoware_vehicle_msgs/msg/gear_report.hpp>
@@ -11,7 +10,6 @@
 #include <autoware_vehicle_msgs/msg/steering_report.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
-#include <tier4_vehicle_msgs/msg/battery_status.hpp>
 #include <tier4_vehicle_msgs/msg/steering_wheel_status_stamped.hpp>
 
 namespace CanMsgParser
@@ -28,21 +26,17 @@ public:
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr & gear_pub,
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr & turn_pub,
     const rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr & hazard_pub,
-    const rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr & battery_pub,
     const rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr &
       steer_st,
-    const std::string & base_frame_id,
-    const rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr & vehicle_status_pub)
+    const std::string & base_frame_id)
   {
     clock_ = node.get_clock();
-    vehicle_status_pub_ = vehicle_status_pub;
     control_mode_pub_ = control_mode_pub;
     velocity_pub_ = velocity_pub;
     steering_pub_ = steering_pub;
     gear_pub_ = gear_pub;
     turn_pub_ = turn_pub;
     hazard_pub_ = hazard_pub;
-    battery_pub_ = battery_pub;
     steer_st_ = steer_st;
     base_frame_id_ = base_frame_id;
   }
@@ -74,46 +68,9 @@ public:
     steer_st_->publish(steer_wheel_status);
   }
 
-  void update_safety_status(const SAFETY_MANAGER_STATUS_t & stat)
-  {
-    latest_safety_status_ = stat;
-  }
-
-  void update_dtc_status(uint64_t raw)
-  {
-    latest_dtc_status_ = raw;
-  }
-
-  void update_dtc_status_1(uint64_t raw)
-  {
-    latest_dtc_status_1_ = raw;
-  }
-
-  void update_mcu_status(const MCU_MODULE_STATUS_t & stat)
-  {
-    latest_mcu_status_ = stat;
-  }
-
-  void publish_vehicle_status()
-  {
-    if (!vehicle_status_pub_) {
-      return;
-    }
-    robeff_msgs::msg::VehicleStatus msg;
-    msg.emergency_triggered_by_button = static_cast<bool>(latest_safety_status_.SM_Err_EmergencyButton);
-    msg.emergency_triggered_by_safety = static_cast<bool>(latest_safety_status_.SM_ErrSafety);
-    msg.emergency_triggered_by_remote_controller = static_cast<bool>(latest_safety_status_.SM_ErrRCEmergency);
-    msg.emergency_triggered_by_autonomous_driving = static_cast<bool>(latest_safety_status_.SM_Err_PCVCU);
-    msg.dtc_status_1 = latest_dtc_status_;
-    msg.dtc_status_2 = latest_dtc_status_1_;
-    msg.odometer = static_cast<float>(latest_mcu_status_.MCU_Odometer_ro) *
-                   static_cast<float>(PC_VCU_MCU_Odometer_ro_CovFactor);
-    vehicle_status_pub_->publish(msg);
-  }
-
   void publish_vehicle_state(const VCU_STAT_VEHICLE_STATE_t & stat) const
   {
-    if (!control_mode_pub_ || !gear_pub_ || !turn_pub_ || !hazard_pub_ || !battery_pub_) {
+    if (!control_mode_pub_ || !gear_pub_ || !turn_pub_ || !hazard_pub_) {
       return;
     }
 
@@ -146,11 +103,6 @@ public:
                              ? autoware_vehicle_msgs::msg::HazardLightsReport::ENABLE
                              : autoware_vehicle_msgs::msg::HazardLightsReport::DISABLE;
     hazard_pub_->publish(hazard_report);
-
-    tier4_vehicle_msgs::msg::BatteryStatus battery_status;
-    battery_status.stamp = stamp;
-    battery_status.energy_level = static_cast<float>(stat.BatterySoC) / 100.0F;
-    battery_pub_->publish(battery_status);
   }
 
 private:
@@ -170,19 +122,13 @@ private:
     }
   }
 
-  SAFETY_MANAGER_STATUS_t latest_safety_status_{};
-  uint64_t latest_dtc_status_{0U};
-  uint64_t latest_dtc_status_1_{0U};
-  MCU_MODULE_STATUS_t latest_mcu_status_{};
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Publisher<robeff_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::ControlModeReport>::SharedPtr control_mode_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::VelocityReport>::SharedPtr velocity_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::SteeringReport>::SharedPtr steering_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::GearReport>::SharedPtr gear_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::TurnIndicatorsReport>::SharedPtr turn_pub_;
   rclcpp::Publisher<autoware_vehicle_msgs::msg::HazardLightsReport>::SharedPtr hazard_pub_;
-  rclcpp::Publisher<tier4_vehicle_msgs::msg::BatteryStatus>::SharedPtr battery_pub_;
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr steer_st_;
   std::string base_frame_id_;
 };

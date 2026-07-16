@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!--
+  STANDALONE RX bench test. Runs the interface together with can_rx_test_publisher,
+  which injects synthetic VCU_STAT_MOTION_SI / VCU_STAT_VEHICLE_STATE frames on
+  /from_can_bus so you can verify the CAN -> Autoware /vehicle/status/* translation.
+
+  !! DO NOT run this while a planning simulation (simple_planning_simulator) is up. !!
+  Both this interface and the simulator publish /vehicle/status/*; running them
+  together makes those topics have two publishers and the ego will misbehave
+  (e.g. stuck velocity / turn signal). Run this on an ISOLATED graph, e.g.:
+
+      export ROS_DOMAIN_ID=42        # in every terminal for this test
+      ros2 launch rbf_mqb_evo_vehicle_interface test_rx.launch.xml
+      ros2 topic echo /vehicle/status/velocity_status
+-->
+<launch>
+  <arg name="rbf_mqb_evo_vehicle_interface_param_path" default="$(find-pkg-share rbf_mqb_evo_vehicle_interface)/config/rbf_mqb_evo_vehicle_interface.param.yaml"/>
+  <arg name="good_crc" default="true"/>
+  <arg name="good_alive" default="true"/>
+  <arg name="publish_rate_hz" default="50.0"/>
+  <arg name="vehicle_state_rate_hz" default="10.0"/>
+
+  <!-- Vehicle interface (Autoware <-> CAN) -->
+  <node pkg="rbf_mqb_evo_vehicle_interface" exec="rbf_mqb_evo_vehicle_interface_node" name="rbf_mqb_evo_vehicle_interface" output="both">
+    <param from="$(var rbf_mqb_evo_vehicle_interface_param_path)"/>
+  </node>
+
+  <!-- Synthetic CAN RX source (stands in for the SocketCAN bridge) -->
+  <node pkg="rbf_mqb_evo_vehicle_interface" exec="can_rx_test_publisher" name="can_rx_test_publisher" output="both">
+    <param name="publish_topic" value="/from_can_bus"/>
+    <param name="good_crc" value="$(var good_crc)"/>
+    <param name="good_alive" value="$(var good_alive)"/>
+    <param name="publish_rate_hz" value="$(var publish_rate_hz)"/>
+    <param name="vehicle_state_rate_hz" value="$(var vehicle_state_rate_hz)"/>
+  </node>
+
+</launch>

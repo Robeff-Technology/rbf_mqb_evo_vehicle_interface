@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(robione_vehicle_interface)
+project(rbf_mqb_evo_vehicle_interface)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -12,30 +12,39 @@ include_directories(
 
 # find dependencies
 find_package(ament_cmake_auto REQUIRED)
+find_package(tier4_vehicle_msgs REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(can_interface SHARED
-        src/can_interface/pc_vcu.c
-        src/can_interface/pc_vcu-binutil.c
+        src/can_interface/vehicle_cmd_status_module_dbc.c
+        src/can_interface/vehicle_cmd_status_module_dbc-binutil.c
 
 )
 
 
-ament_auto_add_library(robione_vehicle_interface SHARED
-        src/robione_vehicle_interface.cpp
+ament_auto_add_library(rbf_mqb_evo_vehicle_interface SHARED
+        src/rbf_mqb_evo_vehicle_interface.cpp
         src/serial_port.cpp
 )
 
-target_link_libraries(robione_vehicle_interface can_interface)
+ament_target_dependencies(rbf_mqb_evo_vehicle_interface
+        rclcpp
+        diagnostic_updater
+        tier4_vehicle_msgs
+        autoware_vehicle_msgs
+        autoware_internal_planning_msgs
+)
+
+target_link_libraries(rbf_mqb_evo_vehicle_interface can_interface)
 
 ament_auto_add_executable(can_rx_test_publisher
         src/can_rx_test_publisher.cpp
 )
 target_link_libraries(can_rx_test_publisher can_interface)
 
-rclcpp_components_register_node(robione_vehicle_interface
-        PLUGIN "robione_vehicle_interface::RobioneVehicleInterface"
-        EXECUTABLE robione_vehicle_interface_node
+rclcpp_components_register_node(rbf_mqb_evo_vehicle_interface
+        PLUGIN "rbf_mqb_evo_vehicle_interface::RbfMqbEvoVehicleInterface"
+        EXECUTABLE rbf_mqb_evo_vehicle_interface_node
 )
 
 

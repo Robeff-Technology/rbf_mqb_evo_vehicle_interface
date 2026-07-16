@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>robione_vehicle_interface</name>
+  <name>rbf_mqb_evo_vehicle_interface</name>
   <version>1.0.0</version>
-  <description>Vehicle interface software for robione facility robots.</description>
+  <description>Autoware vehicle interface for the RBF MQB Evo platform.</description>
   <maintainer email="elaydin@robeff.com">yelaydin</maintainer>
   <license>Apache License 2.0</license>
 
@@ -24,9 +24,6 @@
   <depend>std_msgs</depend>
   <depend>can_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>robeff_msgs</depend>
-  <depend>robione_vehicle_interface_msgs</depend>
-  <depend>sick_safetyscanners2_interfaces</depend>
   <depend>autoware_internal_planning_msgs</depend>
   
 
