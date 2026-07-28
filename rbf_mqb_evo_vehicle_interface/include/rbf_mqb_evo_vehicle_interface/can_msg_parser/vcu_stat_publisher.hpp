@@ -79,6 +79,17 @@ public:
     autoware_vehicle_msgs::msg::ControlModeReport control_mode_report;
     control_mode_report.stamp = stamp;
     control_mode_report.mode = map_control_mode(stat.ControlMode);
+
+    // debug: what actually goes out on /vehicle/status/control_mode
+    {
+      static rclcpp::Clock log_clock{RCL_STEADY_TIME};
+      RCLCPP_INFO_THROTTLE(
+        rclcpp::get_logger("vcu_stat_publisher"), log_clock, 500,
+        "publish control_mode_report: mode=%u (can ControlMode=%u) stamp=%d.%09u",
+        control_mode_report.mode, stat.ControlMode, control_mode_report.stamp.sec,
+        control_mode_report.stamp.nanosec);
+    }
+
     control_mode_pub_->publish(control_mode_report);
 
     autoware_vehicle_msgs::msg::GearReport gear_report;
@@ -110,16 +121,35 @@ private:
   {
     switch (control_mode) {
       case 1U:
-        return autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
+        autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
       case 2U:
-        return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
+        autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
       case 0U:
+        autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
       case 3U:
+        autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
       case 4U:
-        return autoware_vehicle_msgs::msg::ControlModeReport::DISENGAGED;
+        autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
       default:
-        return autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
+        autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
     }
+    // const uint8_t mapped = autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
+
+    // debug: input coming from CAN vs value this function returns
+    // {
+    //   static rclcpp::Clock log_clock{RCL_STEADY_TIME};
+    //   RCLCPP_INFO_THROTTLE(
+    //     rclcpp::get_logger("vcu_stat_publisher"), log_clock, 500,
+    //     "map_control_mode: in=%u -> out=%u", control_mode, mapped);
+    // }
+
+    return control_mode;
+    // if (control_mode > 1U){
+    //   return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
+    // }
+    // else(){
+    //   return autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
+    // }
   }
 
   rclcpp::Clock::SharedPtr clock_;
