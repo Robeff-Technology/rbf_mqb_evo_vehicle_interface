@@ -36,7 +36,7 @@ public:
 
   void set_vehicle_speed_ms_cmd(double ms) { msg_.VehicleSpeedMS_Cmd_phys = ms; }
 
-  void set_autonomous_enable(bool enable) { msg_.AutonomousEnable = enable ? 1U : 0U; }
+  void set_autonomous_enable(bool enable) { msg_.AutonomousEnable = enable; }
   void set_emergency_active(bool active) { msg_.EmergencyActive = active ? 1U : 0U; }
 
   void set_gear_req(GearReq gear) { msg_.GearReq = static_cast<uint8_t>(gear); }
@@ -84,28 +84,33 @@ protected:
     uint8_t len = 0U;
     uint8_t ide = 0U;
 
+    // Work on a copy so the fault override never destroys the commanded state:
+    // otherwise a transient fault would latch AutonomousEnable/GearReq forever.
+    VCU_CTRL_CMD_SI_t tx = msg_;
+
     if (autoware_comm_fault_ || can_comm_fault_) {
-      msg_.VehicleSpeedMS_Cmd_phys = 0.0;
+      tx.VehicleSpeedMS_Cmd_phys = 0.0;
 
-      msg_.AutonomousEnable = 0U;
-      msg_.EmergencyActive = 1U;
+      // AutonomousEnable is intentionally NOT cleared here: the VCU must stay in
+      // autonomous mode so it can act on the safe-stop request below.
+      tx.EmergencyActive = 1U;
 
-      msg_.GearReq = static_cast<uint8_t>(GearReq::PARK);
+      tx.GearReq = static_cast<uint8_t>(GearReq::PARK);
     }
-    // pack without CRC first
-    Pack_VCU_CTRL_CMD_SI_vehicle_cmd_status_module_dbc(&msg_, frame_out.data(), &len, &ide);
 
-    msg_.Reserved = 0U;
+    tx.Reserved = 0U;
+
+    // pack without CRC first
+    Pack_VCU_CTRL_CMD_SI_vehicle_cmd_status_module_dbc(&tx, frame_out.data(), &len, &ide);
 
     // compute CRC over Byte0..Byte6
-    msg_.CRC8 = crc8_autosar(frame_out.data(), VCU_CTRL_CMD_SI_DLC - 1U);
+    tx.CRC8 = crc8_autosar(frame_out.data(), VCU_CTRL_CMD_SI_DLC - 1U);
 
     // repack including CRC
-    Pack_VCU_CTRL_CMD_SI_vehicle_cmd_status_module_dbc(&msg_, frame_out.data(), &len, &ide);
+    Pack_VCU_CTRL_CMD_SI_vehicle_cmd_status_module_dbc(&tx, frame_out.data(), &len, &ide);
 
     // increment after sending so first frame uses 0
     msg_.AliveCounter = static_cast<uint8_t>((msg_.AliveCounter + 1U) & 0xFFU);
-
     return get_can_id();
   }
 

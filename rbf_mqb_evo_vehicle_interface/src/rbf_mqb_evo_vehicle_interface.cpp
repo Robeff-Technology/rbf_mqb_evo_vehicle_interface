@@ -19,6 +19,7 @@ RbfMqbEvoVehicleInterface::RbfMqbEvoVehicleInterface(const rclcpp::NodeOptions &
     {"vcu_stat_motion", params_.get_or<double>("expected_vcu_stat_motion_hz", 50.0)},
     {"vcu_stat_vehicle_state", params_.get_or<double>("expected_vcu_stat_vehicle_state_hz", 50.0)}}
 {
+  vcu_ctrl_cmd_si_builder_.set_autonomous_enable(true);
   params_.print_loaded_parameters();
   diag_updater_.setHardwareID("rbf_mqb_evo_vehicle_interface");
   diag_updater_.add("CAN Status", this, &RbfMqbEvoVehicleInterface::diagnostic_can_callback);
