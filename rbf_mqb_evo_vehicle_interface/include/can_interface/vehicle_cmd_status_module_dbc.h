@@ -630,6 +630,13 @@ uint32_t Pack_VCU_STAT_COMM_STATUS_vehicle_cmd_status_module_dbc(VCU_STAT_COMM_S
 uint32_t Pack_VCU_STAT_COMM_STATUS_vehicle_cmd_status_module_dbc(VCU_STAT_COMM_STATUS_t* _m, uint8_t* _d, uint8_t* _len, uint8_t* _ide);
 #endif // VEHICLE_CMD_STATUS_MODULE_DBC_USE_CANSTRUCT
 
+// --- Manually maintained (not part of the generated DBC output) ---------------
+// def @CLEAR_INTERVENTION_CMD CAN Message (67764226 0x40a0002)
+// Payload carries no signals: all 8 data bytes are sent as zero.
+#define CLEAR_INTERVENTION_CMD_IDE (1U)
+#define CLEAR_INTERVENTION_CMD_DLC (8U)
+#define CLEAR_INTERVENTION_CMD_CANID (0x40a0002U)
+
 #ifdef __cplusplus
 }
 #endif

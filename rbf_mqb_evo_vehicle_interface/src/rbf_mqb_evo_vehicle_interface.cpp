@@ -27,6 +27,7 @@ RbfMqbEvoVehicleInterface::RbfMqbEvoVehicleInterface(const rclcpp::NodeOptions &
     "Autoware Command Rate", this, &RbfMqbEvoVehicleInterface::diagnostic_cmd_rate_callback);
   init_subscribers();
   init_publishers();
+  init_services();
 
   vcu_stat_publisher_.configure(
     *this, control_mode_pub_, vehicle_twist_pub_, steering_status_pub_, gear_status_pub_,
@@ -98,6 +99,16 @@ void RbfMqbEvoVehicleInterface::init_publishers()
       "/vehicle/status/steering_wheel_status", rclcpp::QoS(10).reliable());
 }
 
+void RbfMqbEvoVehicleInterface::init_services()
+{
+  // Relative name so the service follows the node namespace
+  clear_intervention_srv_ = create_service<std_srvs::srv::Trigger>(
+    "clear_intervention",
+    std::bind(
+      &RbfMqbEvoVehicleInterface::clear_intervention_callback, this, std::placeholders::_1,
+      std::placeholders::_2));
+}
+
 void RbfMqbEvoVehicleInterface::can_receive_callback(can_msgs::msg::Frame::SharedPtr msg)
 {
   // DBC SIDE
@@ -156,6 +167,52 @@ void RbfMqbEvoVehicleInterface::vehicle_emergency_cmd_callback(
 {
   vcu_ctrl_cmd_si_builder_.set_emergency_active(msg && msg->emergency);
   cmd_rate_monitor_.update("vehicle_emergency_cmd", now());
+}
+
+void RbfMqbEvoVehicleInterface::clear_intervention_callback(
+  const std_srvs::srv::Trigger::Request::SharedPtr request,
+  std_srvs::srv::Trigger::Response::SharedPtr response)
+{
+  (void)request;
+
+  if (!can_frame_pub_) {
+    response->success = false;
+    response->message = "CAN publisher is not initialized";
+    return;
+  }
+
+  if (can_frame_pub_->get_subscription_count() == 0U) {
+    response->success = false;
+    response->message = "No ros2_socketcan sender is connected to to_can_bus";
+    return;
+  }
+
+  can_msgs::msg::Frame frame;
+  frame.header.stamp = now();
+  frame.header.frame_id = "can";
+
+  frame.id = CLEAR_INTERVENTION_CMD_CANID;
+  frame.dlc = CLEAR_INTERVENTION_CMD_DLC;
+  frame.is_extended = true;
+  frame.is_rtr = false;
+  frame.is_error = false;
+  frame.data.fill(0U);
+
+  try {
+    can_frame_pub_->publish(frame);
+  } catch (const std::exception & exception) {
+    response->success = false;
+    response->message =
+      std::string{"Failed to publish clear-intervention CAN frame: "} + exception.what();
+    return;
+  }
+
+  RCLCPP_INFO(
+    this->get_logger(), "Clear-intervention CAN frame (0x%X) published to to_can_bus",
+    CLEAR_INTERVENTION_CMD_CANID);
+
+  response->success = true;
+  response->message = "Clear-intervention CAN frame published to to_can_bus";
 }
 
 void RbfMqbEvoVehicleInterface::diagnostic_can_callback(

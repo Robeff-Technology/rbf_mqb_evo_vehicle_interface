@@ -36,6 +36,7 @@
 #include <autoware_vehicle_msgs/msg/turn_indicators_report.hpp>
 #include <autoware_vehicle_msgs/msg/velocity_report.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <tier4_vehicle_msgs/msg/steering_wheel_status_stamped.hpp>
 #include <tier4_vehicle_msgs/msg/vehicle_emergency_stamped.hpp>
 
@@ -278,15 +279,24 @@ private:
   rclcpp::Publisher<tier4_vehicle_msgs::msg::SteeringWheelStatusStamped>::SharedPtr
     steering_wheel_status_pub_;
 
+  /* Services */
+
+  // Sends a single CLEAR_INTERVENTION_CMD CAN frame when triggered
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_intervention_srv_;
+
   // Callbacks
   void control_cmd_callback(const autoware_control_msgs::msg::Control::SharedPtr msg);
   void gear_cmd_callback(const autoware_vehicle_msgs::msg::GearCommand::SharedPtr msg);
   void vehicle_emergency_cmd_callback(
     const tier4_vehicle_msgs::msg::VehicleEmergencyStamped::SharedPtr msg);
+  void clear_intervention_callback(
+    const std_srvs::srv::Trigger::Request::SharedPtr request,
+    std_srvs::srv::Trigger::Response::SharedPtr response);
 
   // Init helpers
   void init_subscribers();
   void init_publishers();
+  void init_services();
 
   // diagnostic callback
   void diagnostic_can_callback(diagnostic_updater::DiagnosticStatusWrapper & stat);
