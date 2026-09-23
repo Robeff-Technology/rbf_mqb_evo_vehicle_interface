@@ -119,37 +119,17 @@ public:
 private:
   static uint8_t map_control_mode(uint8_t control_mode)
   {
+    // VCU operation_mode_t (mode_manager_module.h) -> Autoware ControlModeReport.
     switch (control_mode) {
-      case 1U:
-        autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
-      case 2U:
-        autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
-      case 0U:
-        autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
-      case 3U:
-        autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
-      case 4U:
-        autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
+      case 0U:  // MODE_INTERVENTION (reserved)
+      case 1U:  // MODE_DRIVER
+        return autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
+      case 2U:  // MODE_THROTTLE_BRAKE
+      case 3U:  // MODE_SPEED_CONTROL
+        return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
       default:
-        autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
+        return autoware_vehicle_msgs::msg::ControlModeReport::NO_COMMAND;
     }
-    // const uint8_t mapped = autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
-
-    // debug: input coming from CAN vs value this function returns
-    // {
-    //   static rclcpp::Clock log_clock{RCL_STEADY_TIME};
-    //   RCLCPP_INFO_THROTTLE(
-    //     rclcpp::get_logger("vcu_stat_publisher"), log_clock, 500,
-    //     "map_control_mode: in=%u -> out=%u", control_mode, mapped);
-    // }
-
-    return control_mode;
-    // if (control_mode > 1U){
-    //   return autoware_vehicle_msgs::msg::ControlModeReport::AUTONOMOUS;
-    // }
-    // else(){
-    //   return autoware_vehicle_msgs::msg::ControlModeReport::MANUAL;
-    // }
   }
 
   rclcpp::Clock::SharedPtr clock_;
